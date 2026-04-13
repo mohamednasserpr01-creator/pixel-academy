@@ -93,15 +93,15 @@ export default function Home() {
             {/* قسم العروض */}
             <OffersSection lang={lang} />
             
-            {/* نافذة الشات بوت */}
+            {/* استدعاء الشات بوت */}
             <ChatBot lang={lang} />
             
             {/* الفوتر */}
-            <Footer lang={lang} />
+            <Footer />
 
             {/* ================= الأزرار الطافية الثابتة ================= */}
             <div className="fab-container">
-                {/* زرار واتساب الدعم الفني بالرقم الجديد */}
+                {/* زرار واتساب الدعم الفني */}
                 <a 
                     href="https://wa.me/201221466441" 
                     target="_blank" 
@@ -112,7 +112,7 @@ export default function Home() {
                     <FaWhatsapp />
                 </a>
 
-                {/* زرار التحكم في فتح نافذة الشات */}
+                {/* زرار الشات بوت */}
                 <button 
                     className="fab-btn fab-ai" 
                     title={lang === 'ar' ? 'بيكسل AI' : 'Pixel AI'}
