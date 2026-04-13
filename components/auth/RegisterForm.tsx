@@ -1,8 +1,10 @@
 "use client";
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-// ضفنا أيقونات العين هنا
 import { FaUserPlus, FaEye, FaEyeSlash } from 'react-icons/fa';
+
+// 💡 استدعاء Context تسجيل الدخول
+import { useAuth } from '../../context/AuthContext';
 
 interface Props {
     onSwitchView: () => void;
@@ -15,20 +17,12 @@ interface Props {
 export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, termsAccepted, lang }: Props) {
     const isAr = lang === 'ar';
     
+    // 💡 استدعاء دالة الدخول من الـ Context
+    const { login } = useAuth();
+    
     const [regData, setRegData] = useState({ name: '', phone: '', parent: '', gov: '', address: '', school: '', pass: '' });
     const [regErrors, setRegErrors] = useState({ name: '', phone: '', parent: '', school: '', pass: '' });
-
-    // حالة إظهار/إخفاء الباسورد
     const [showPassword, setShowPassword] = useState(false);
-
-    const getDeviceId = () => {
-        let deviceId = localStorage.getItem('pixel_device_id');
-        if (!deviceId) {
-            deviceId = 'DEV-' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('pixel_device_id', deviceId);
-        }
-        return deviceId;
-    };
 
     const validateReg = (field: string, value: string) => {
         let errors = { ...regErrors };
@@ -71,11 +65,10 @@ export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, ter
     };
 
     const handleRegister = () => {
-        const users = JSON.parse(localStorage.getItem('pixel_users_db') || '[]');
-        users.push({ phone: regData.phone, password: regData.pass, registeredDevice: getDeviceId() });
-        localStorage.setItem('pixel_users_db', JSON.stringify(users));
-        localStorage.setItem('pixel_logged_in', 'true');
-        localStorage.setItem('pixel_current_user_phone', regData.phone);
+        // 💡 تشغيل تسجيل الدخول المركزي بدلاً من الـ LocalStorage
+        login(regData.phone);
+        
+        // تشغيل نافذة الترحيب (والتوجيه للوحة التحكم هيتم أوتوماتيك من الصفحة الرئيسية)
         onSuccess();
     };
 
@@ -86,14 +79,11 @@ export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, ter
             </h2>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                
-                {/* صف 1: الاسم (كامل) */}
                 <div style={{ width: '100%' }}>
                     <input type="text" id="r-name" className={`form-control ${regErrors.name ? 'invalid' : ''}`} placeholder={isAr ? 'الاسم الرباعي (بالعربي)' : 'Full Name (Arabic)'} value={regData.name} onChange={handleRegChange} style={{ width: '100%' }} />
                     {regErrors.name && <span className="err-hint" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--danger)', marginTop: '5px' }}>{regErrors.name}</span>}
                 </div>
 
-                {/* صف 2: التليفونات (مقسمين بالنص) */}
                 <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                     <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                         <input type="tel" id="r-phone" className={`form-control ${regErrors.phone ? 'invalid' : ''}`} placeholder={isAr ? 'رقم الطالب (واتساب)' : 'Student Phone (WhatsApp)'} value={regData.phone} onChange={handleRegChange} style={{ width: '100%' }} />
@@ -105,7 +95,6 @@ export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, ter
                     </div>
                 </div>
 
-                {/* صف 3: المحافظة والمدرسة (مقسمين بالنص) */}
                 <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                     <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                         <select id="r-gov" className="form-control" value={regData.gov} onChange={handleRegChange} style={{ width: '100%', cursor: 'pointer' }}>
@@ -120,12 +109,10 @@ export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, ter
                     </div>
                 </div>
 
-                {/* صف 4: العنوان (كامل) */}
                 <div style={{ width: '100%' }}>
                     <input type="text" id="r-address" className="form-control" placeholder={isAr ? 'العنوان بالتفصيل' : 'Detailed Address'} value={regData.address} onChange={handleRegChange} style={{ width: '100%' }} />
                 </div>
 
-                {/* صف 5: الرقم السري (كامل) + العين */}
                 <div style={{ width: '100%' }}>
                     <div style={{ position: 'relative', width: '100%' }}>
                         <input 

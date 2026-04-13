@@ -1,41 +1,39 @@
 "use client";
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { FaSignInAlt, FaWhatsapp } from 'react-icons/fa';
+
+// 💡 استدعاء Context تسجيل الدخول
+import { useAuth } from '../../context/AuthContext';
 
 interface Props {
     onSwitchView: () => void;
 }
 
 export default function LoginForm({ onSwitchView }: Props) {
-    const router = useRouter();
     const [loginData, setLoginData] = useState({ phone: '', pass: '' });
     const [globalError, setGlobalError] = useState('');
 
-    const getDeviceId = () => {
-        let deviceId = localStorage.getItem('pixel_device_id');
-        if (!deviceId) {
-            deviceId = 'DEV-' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('pixel_device_id', deviceId);
-        }
-        return deviceId;
-    };
+    // 💡 استخدام دالة الدخول من الـ Context
+    const { login } = useAuth();
 
     const handleLogin = () => {
         setGlobalError('');
-        const users = JSON.parse(localStorage.getItem('pixel_users_db') || '[]');
-        const user = users.find((u: any) => u.phone === loginData.phone);
         
-        if (!user) return setGlobalError("هذا الرقم غير مسجل لدينا، يرجى إنشاء حساب جديد.");
-        if (user.password !== loginData.pass) return setGlobalError("كلمة المرور غير صحيحة.");
-        if (user.registeredDevice !== getDeviceId()) {
-            return setGlobalError("⚠️ هذا الحساب مسجل على جهاز آخر. يرجى التواصل مع الدعم الفني.");
+        // محاكاة للتحقق المبدئي (سيتم استبدالها بـ API الباك إند لاحقاً)
+        if (!loginData.phone || !loginData.pass) {
+            return setGlobalError("يرجى إدخال رقم الهاتف وكلمة المرور.");
+        }
+        
+        if (loginData.phone.length < 11) {
+            return setGlobalError("رقم الهاتف غير صحيح، يجب أن يتكون من 11 رقم.");
         }
 
-        localStorage.setItem('pixel_logged_in', 'true');
-        localStorage.setItem('pixel_current_user_phone', loginData.phone);
-        router.push('/');
+        // 💡 تشغيل تسجيل الدخول المركزي
+        login(loginData.phone);
+        
+        // التوجيه للوحة التحكم هيتم أوتوماتيك من الصفحة الرئيسية (AuthPage)
+        // لأنها بتراقب حالة الـ isLoggedIn
     };
 
     return (
