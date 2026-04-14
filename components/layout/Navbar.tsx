@@ -1,17 +1,16 @@
 "use client";
 import React, { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { 
     FaHome, FaChalkboardTeacher, FaPlayCircle, FaShoppingCart, 
     FaGamepad, FaUserShield, FaTimes, FaGlobe, FaMoon, FaSun, 
-    FaBars, FaUserCircle, FaSignOutAlt, FaLayout 
+    FaBars, FaUserCircle, FaSignOutAlt, FaThLarge, FaBookOpen, FaFolderOpen 
 } from 'react-icons/fa';
 
 // 💡 استدعاء محرك تسجيل الدخول
 import { useAuth } from '../../context/AuthContext';
 
-export default function Navbar({ lang, theme, toggleLang, toggleMode }) {
+export default function Navbar({ lang, theme, toggleLang, toggleMode }: any) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     
     // 💡 استخدام البيانات من الـ Context
@@ -41,7 +40,8 @@ export default function Navbar({ lang, theme, toggleLang, toggleMode }) {
             <header style={{ zIndex: 1000 }}>
                 <div className="logo">
                     <Link href="/">
-                        <Image src="https://via.placeholder.com/180x50/6c5ce7/ffffff?text=Pixel+Academy" alt="Pixel Academy" width={180} height={50} priority />
+                        {/* 💡 تم التعديل هنا: استخدام img العادية بدل Image لمنع خطأ 500 */}
+                        <img src="https://via.placeholder.com/180x50/6c5ce7/ffffff?text=Pixel+Academy" alt="Pixel Academy" style={{ width: '180px', height: '50px', objectFit: 'contain' }} />
                     </Link>
                 </div>
                 
@@ -64,7 +64,7 @@ export default function Navbar({ lang, theme, toggleLang, toggleMode }) {
                             {isLoggedIn ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                     <Link href="/dashboard" className="btn-primary" style={{ display: 'flex', justifyContent: 'center', width: '100%' }} onClick={() => setIsMenuOpen(false)}>
-                                        <FaLayout style={{ margin: '0 5px' }} /> {lang === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
+                                        <FaThLarge style={{ margin: '0 5px' }} /> {lang === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
                                     </Link>
                                     <button onClick={() => { logout(); setIsMenuOpen(false); }} className="btn-outline" style={{ color: '#e74c3c', borderColor: '#e74c3c' }}>
                                         <FaSignOutAlt style={{ margin: '0 5px' }} /> {lang === 'ar' ? 'تسجيل الخروج' : 'Logout'}
@@ -90,7 +90,7 @@ export default function Navbar({ lang, theme, toggleLang, toggleMode }) {
                     {isLoggedIn ? (
                         <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <Link href="/dashboard" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <FaLayout /> {lang === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
+                                <FaThLarge /> {lang === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
                             </Link>
                             <button className="icon-btn" onClick={logout} title={lang === 'ar' ? 'خروج' : 'Logout'} style={{ color: '#e74c3c' }}>
                                 <FaSignOutAlt />

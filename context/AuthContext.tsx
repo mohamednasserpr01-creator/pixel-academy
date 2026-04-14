@@ -1,7 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// 1. تحديد شكل بيانات الطالب
 interface User {
     phone: string;
     name?: string;
@@ -14,32 +13,33 @@ interface AuthContextType {
     logout: () => void;
 }
 
-// 2. إنشاء الـ Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// 3. الـ Provider اللي هيشيل الداتا
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
 
-    // لما الموقع يفتح، بنشيك لو في داتا قديمة مؤقتاً لحد ما نربط الباك إند
     useEffect(() => {
-        const loggedIn = localStorage.getItem('pixel_logged_in');
+        // بنقرأ الكوكي لما الموقع يفتح
+        const hasAuthCookie = document.cookie.includes('pixel_auth=true');
         const phone = localStorage.getItem('pixel_current_user_phone');
-        if (loggedIn === 'true' && phone) {
+        
+        if (hasAuthCookie && phone) {
             setUser({ phone });
         }
     }, []);
 
     const login = (phone: string) => {
         setUser({ phone });
-        localStorage.setItem('pixel_logged_in', 'true');
         localStorage.setItem('pixel_current_user_phone', phone);
+        // 💡 الضربة القاضية: إنشاء Cookie صالحة لمدة 30 يوم
+        document.cookie = "pixel_auth=true; path=/; max-age=2592000; SameSite=Strict";
     };
 
     const logout = () => {
         setUser(null);
-        localStorage.removeItem('pixel_logged_in');
         localStorage.removeItem('pixel_current_user_phone');
+        // 💡 مسح الـ Cookie
+        document.cookie = "pixel_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     };
 
     return (
@@ -49,7 +49,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-// 4. Custom Hook عشان نستخدمه في أي صفحة
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (context === undefined) {
