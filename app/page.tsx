@@ -5,9 +5,7 @@ import Hero from '../components/home/Hero';
 import CoursesSection from '../components/home/CoursesSection';
 import ServicesSection from '../components/home/ServicesSection';
 import OffersSection from '../components/home/OffersSection';
-import ChatBot from '../components/ui/ChatBot';
 import Footer from '../components/layout/Footer';
-import { FaWhatsapp, FaRobot } from 'react-icons/fa'; 
 
 export default function Home() {
     const [mounted, setMounted] = useState<boolean>(false);
@@ -61,19 +59,12 @@ export default function Home() {
 
     return (
         <main style={{ position: 'relative', width: '100%', overflowX: 'hidden' }}>
-            {/* القائمة العلوية */}
             <Navbar lang={lang} theme={theme} toggleLang={toggleLang} toggleMode={toggleMode} />
             
-            {/* القسم الرئيسي - Hero */}
             <Hero lang={lang} />
-            
-            {/* قسم الكورسات */}
             <CoursesSection lang={lang} />
-            
-            {/* قسم الخدمات */}
             <ServicesSection lang={lang} />
 
-            {/* بانر المجتمع الحصري */}
             <section className="section-padding">
                 <div className="forum-card reveal active">
                     <div className="forum-glow-bg1"></div>
@@ -82,7 +73,7 @@ export default function Home() {
                         <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', marginBottom: '15px', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
                             {lang === 'ar' ? 'مجتمع بيكسل الحصري 🚀' : 'Exclusive Pixel Community 🚀'}
                         </h2>
-                        <p style={{ fontSize: '1.1rem', marginBottom: '30px', maxWidth: '600px', lineHeight: 1.8, opacity: 0.9 }}>
+                        <p style={{ fontSize: '1.1rem', marginBottom: '30px', maxWidth: '600px', margin: '0 auto 30px', lineHeight: 1.8, opacity: 0.9 }}>
                             {lang === 'ar' ? 'مساحتك الخاصة للمناقشة مع أوائل الجمهورية ومدرسينك!' : 'Your space to discuss with top students and teachers!'}
                         </p>
                         <a href="#" className="glow-btn">{lang === 'ar' ? 'دخول إلى المنتدى الآن' : 'Enter Forum Now'}</a>
@@ -90,40 +81,8 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* قسم العروض */}
             <OffersSection lang={lang} />
-            
-            {/* استدعاء الشات بوت */}
-            <ChatBot lang={lang} />
-            
-            {/* الفوتر */}
             <Footer />
-
-            {/* ================= الأزرار الطافية الثابتة ================= */}
-            <div className="fab-container">
-                {/* زرار واتساب الدعم الفني */}
-                <a 
-                    href="https://wa.me/201221466441" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="fab-btn fab-wa"
-                    title={lang === 'ar' ? 'تواصل مع الدعم الفني' : 'Contact Support'}
-                >
-                    <FaWhatsapp />
-                </a>
-
-                {/* زرار الشات بوت */}
-                <button 
-                    className="fab-btn fab-ai" 
-                    title={lang === 'ar' ? 'بيكسل AI' : 'Pixel AI'}
-                    onClick={() => {
-                        const chatWin = document.getElementById('chat-win');
-                        if (chatWin) chatWin.classList.toggle('show');
-                    }}
-                >
-                    <FaRobot />
-                </button>
-            </div>
         </main>
     );
 }
