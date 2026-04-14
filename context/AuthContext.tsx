@@ -1,58 +1,68 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface User {
-    phone: string;
-    name?: string;
-}
+import { User } from '../types';
+import { authService } from '../services/authService';
 
 interface AuthContextType {
     user: User | null;
     isLoggedIn: boolean;
-    login: (phone: string) => void;
+    login: (email: string, pass: string) => Promise<void>;
     logout: () => void;
+    checkRole: (allowedRoles: string[]) => boolean; // 💡 دالة جديدة للتحقق من الصلاحيات
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
+    // التحقق من وجود توكن قديم أول ما الموقع يفتح
     useEffect(() => {
-        // بنقرأ الكوكي لما الموقع يفتح
-        const hasAuthCookie = document.cookie.includes('pixel_auth=true');
-        const phone = localStorage.getItem('pixel_current_user_phone');
-        
-        if (hasAuthCookie && phone) {
-            setUser({ phone });
+        const tokenMatch = document.cookie.match(new RegExp('(^| )pixel_auth=([^;]+)'));
+        if (tokenMatch) {
+            // هنا المفروض نكلم الباك إند بالتوكن ده عشان نجيب بيانات اليوزر
+            // مؤقتاً هنعتبره أدمن
+            setUser({ id: 'u1', name: 'محمد ناصر', email: 'admin@pixel.com', role: 'admin' });
+            setIsLoggedIn(true);
         }
     }, []);
 
-    const login = (phone: string) => {
-        setUser({ phone });
-        localStorage.setItem('pixel_current_user_phone', phone);
-        // 💡 الضربة القاضية: إنشاء Cookie صالحة لمدة 30 يوم
-        document.cookie = "pixel_auth=true; path=/; max-age=2592000; SameSite=Strict";
+    const login = async (email: string, pass: string) => {
+        try {
+            const userData = await authService.login(email, pass);
+            setUser(userData);
+            setIsLoggedIn(true);
+            
+            // حفظ التوكن في الـ Cookie عشان الـ Middleware يشوفه
+            document.cookie = `pixel_auth=${userData.token}; path=/; max-age=86400; secure; samesite=strict`;
+        } catch (error) {
+            console.error("فشل تسجيل الدخول:", error);
+            throw error;
+        }
     };
 
     const logout = () => {
+        authService.logout();
         setUser(null);
-        localStorage.removeItem('pixel_current_user_phone');
-        // 💡 مسح الـ Cookie
-        document.cookie = "pixel_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        setIsLoggedIn(false);
+    };
+
+    // 💡 دالة عبقرية: بتديها مصفوفة فيها الـ Roles المسموحة، وتقولك اليوزر ده مسموحله يدخل ولا لأ
+    const checkRole = (allowedRoles: string[]) => {
+        if (!user) return false;
+        return allowedRoles.includes(user.role);
     };
 
     return (
-        <AuthContext.Provider value={{ user, isLoggedIn: !!user, login, logout }}>
+        <AuthContext.Provider value={{ user, isLoggedIn, login, logout, checkRole }}>
             {children}
         </AuthContext.Provider>
     );
 }
 
-export const useAuth = () => {
+export function useAuth() {
     const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error("useAuth must be used within an AuthProvider");
-    }
+    if (!context) throw new Error("useAuth must be used within an AuthProvider");
     return context;
-};
+}

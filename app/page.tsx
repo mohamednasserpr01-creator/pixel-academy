@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Navbar from '../components/layout/Navbar';
 import Hero from '../components/home/Hero';
 import CoursesSection from '../components/home/CoursesSection';
@@ -7,25 +7,15 @@ import ServicesSection from '../components/home/ServicesSection';
 import OffersSection from '../components/home/OffersSection';
 import Footer from '../components/layout/Footer';
 
+// 💡 سحب الإعدادات المركزية
+import { useSettings } from '../context/SettingsContext';
+
 export default function Home() {
-    const [mounted, setMounted] = useState<boolean>(false);
-    const [theme, setTheme] = useState<string>('dark');
-    const [lang, setLang] = useState<string>('ar');
+    // 💡 سحبنا اللغة بس عشان نبعتها للأقسام (بدون ما نكتب دوال التغيير هنا)
+    const { lang } = useSettings();
 
     useEffect(() => {
-        setMounted(true);
-        const savedTheme = localStorage.getItem('pixel_theme') || 'dark';
-        const savedLang = localStorage.getItem('pixel_lang') || 'ar';
-        setTheme(savedTheme);
-        setLang(savedLang);
-        
-        if (savedTheme === 'light') document.body.classList.add('light-mode');
-        document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
-        document.documentElement.lang = savedLang;
-    }, []);
-
-    useEffect(() => {
-        if (!mounted) return;
+        // أنيميشن الظهور (Reveal) بس هو اللي يفضل هنا
         const observerOptions = { threshold: 0.15, rootMargin: "0px 0px -50px 0px" };
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -38,28 +28,12 @@ export default function Home() {
 
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
         return () => observer.disconnect();
-    }, [mounted]);
-
-    const toggleMode = () => {
-        const newTheme = theme === 'dark' ? 'light' : 'dark';
-        setTheme(newTheme);
-        localStorage.setItem('pixel_theme', newTheme);
-        document.body.classList.toggle('light-mode');
-    };
-
-    const toggleLang = () => {
-        const newLang = lang === 'ar' ? 'en' : 'ar';
-        setLang(newLang);
-        localStorage.setItem('pixel_lang', newLang);
-        document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr';
-        document.documentElement.lang = newLang;
-    };
-
-    if (!mounted) return null;
+    }, []);
 
     return (
         <main style={{ position: 'relative', width: '100%', overflowX: 'hidden' }}>
-            <Navbar lang={lang} theme={theme} toggleLang={toggleLang} toggleMode={toggleMode} />
+            {/* 💡 الناف بار بقى طلقة ومش محتاج نبعتله أي Props */}
+            <Navbar />
             
             <Hero lang={lang} />
             <CoursesSection lang={lang} />

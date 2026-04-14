@@ -9,12 +9,18 @@ import {
 
 // 💡 استدعاء محرك تسجيل الدخول
 import { useAuth } from '../../context/AuthContext';
+// 💡 استدعاء محرك الإعدادات (الثيم واللغة) اللي لسه عاملينه
+import { useSettings } from '../../context/SettingsContext';
 
-export default function Navbar({ lang, theme, toggleLang, toggleMode }: any) {
+// 💡 لاحظ هنا: شيلنا (lang, theme, toggleLang, toggleMode) من الأقواس
+export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     
-    // 💡 استخدام البيانات من الـ Context
+    // 💡 استخدام البيانات من الـ Auth
     const { isLoggedIn, logout, user } = useAuth();
+    
+    // 💡 سحبنا الثيم واللغة من المركز السري بتاعنا بدل الـ Props
+    const { theme, lang, toggleMode, toggleLang } = useSettings();
 
     return (
         <>
@@ -40,7 +46,6 @@ export default function Navbar({ lang, theme, toggleLang, toggleMode }: any) {
             <header style={{ zIndex: 1000 }}>
                 <div className="logo">
                     <Link href="/">
-                        {/* 💡 تم التعديل هنا: استخدام img العادية بدل Image لمنع خطأ 500 */}
                         <img src="https://via.placeholder.com/180x50/6c5ce7/ffffff?text=Pixel+Academy" alt="Pixel Academy" style={{ width: '180px', height: '50px', objectFit: 'contain' }} />
                     </Link>
                 </div>

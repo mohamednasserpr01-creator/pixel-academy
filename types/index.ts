@@ -1,33 +1,43 @@
-// تعريف شكل بيانات الكورس
+// أنواع المستخدمين
+export interface User {
+    id: string;
+    name: string;
+    email: string;
+    role: 'student' | 'teacher' | 'admin';
+    avatar?: string;
+    token?: string;
+}
+
+// أنواع الكورسات
 export interface Course {
-    id: number;
+    id: string | number;
     img: string;
     titleAr: string;
     titleEn: string;
     descAr: string;
     descEn: string;
+    price: number;
+    instructorId?: string;
+    level?: string;
 }
 
-// تعريف شكل بيانات العروض
+// أنواع المحاضرات
+export interface Lecture {
+    id: string;
+    courseId: string | number;
+    titleAr: string;
+    titleEn: string;
+    videoUrl: string;
+    duration: string;
+    isLocked: boolean;
+    attachments?: { id: string; name: string; url: string }[];
+}
+
+// أنواع العروض
 export interface Offer {
-    id: number;
+    id: string | number;
     img: string;
     titleAr: string;
     titleEn: string;
-    descAr: string;
-    descEn: string;
-}
-
-// تعريف شكل بيانات الخدمات
-export interface Service {
-    icon: string;
-    titleAr: string;
-    titleEn: string;
-}
-
-// تعريف شكل رسائل الشات
-export interface ChatMessage {
-    id: number;
-    sender: 'bot' | 'user';
-    text: string;
+    discountPercentage: number;
 }
