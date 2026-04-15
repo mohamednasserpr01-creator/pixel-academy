@@ -1,18 +1,18 @@
 "use client";
 import React, { useState, useEffect, useRef, use } from 'react';
-import Navbar from '../../../components/layout/Navbar';
-import Footer from '../../../components/layout/Footer';
+import Link from 'next/link';
 import { 
     FaPhoneAlt, FaWhatsapp, FaFacebookF, FaInstagram, FaTiktok, 
     FaPlay, FaMicrophone, FaPaperPlane, FaCommentAlt, FaLock, FaBolt
 } from 'react-icons/fa';
-import Link from 'next/link';
+
+// 💡 1. استدعاء مركز الإعدادات
+import { useSettings } from '../../../context/SettingsContext';
 
 // =========================================================================
-// 💡 MOCK API DATA (هتستبدل بـ fetch request في الباك إند بناءً على الـ ID)
+// 💡 MOCK API DATA 
 // =========================================================================
 const fetchTeacherData = async (id: string) => {
-    // محاكاة سريعة للباك إند
     return {
         id, 
         nameAr: "أ. محمد ناصر", nameEn: "Mr. Mohamed Nasser", 
@@ -36,15 +36,15 @@ const fetchTeacherData = async (id: string) => {
 };
 
 export default function TeacherProfile({ params }: { params: Promise<{ id: string }> }) {
-    // 💡 حل مشكلة Next.js 15: فك الـ Promise بتاع الـ params
     const resolvedParams = use(params);
     const teacherId = resolvedParams.id;
 
+    // 💡 2. سحب اللغة من المركز الموحد
+    const { lang } = useSettings();
+
     const [mounted, setMounted] = useState(false);
-    const [theme, setTheme] = useState('dark');
-    const [lang, setLang] = useState('ar');
     const [teacher, setTeacher] = useState<any>(null);
-    const [isLoggedIn, setIsLoggedIn] = useState(false); // Authentication state
+    const [isLoggedIn, setIsLoggedIn] = useState(false); 
 
     // Courses State
     const [currentGrade, setCurrentGrade] = useState(1);
@@ -58,75 +58,40 @@ export default function TeacherProfile({ params }: { params: Promise<{ id: strin
     const [isTyping, setIsTyping] = useState(false);
     const chatBoxRef = useRef<HTMLDivElement>(null);
 
-    // 1. Initial Load & Fetch Data
+    // Initial Load & Fetch Data
     useEffect(() => {
         setMounted(true);
-        const savedTheme = localStorage.getItem('pixel_theme') || 'dark';
-        const savedLang = localStorage.getItem('pixel_lang') || 'ar';
-        setTheme(savedTheme); 
-        setLang(savedLang);
 
-        // تفعيل الوضع واللغة على الـ DOM
-        if (savedTheme === 'light') {
-            document.body.classList.add('light-mode');
-        } else {
-            document.body.classList.remove('light-mode');
-        }
-        document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
-        document.documentElement.lang = savedLang;
-
-        // Fetch Teacher Data API باستخدام الـ ID بعد ما فكيناه
         fetchTeacherData(teacherId).then(data => {
             setTeacher(data);
             setMessages([{ 
                 id: 1, sender: 'bot', type: 'text', 
-                content: savedLang === 'ar' ? `أهلاً بيك! أنا المساعد الذكي لـ ${data.nameAr}. اختار طريقة الرد (نص أو صوت) واسألني في المنهج!` : `Welcome! I'm ${data.nameEn}'s AI.` 
+                content: lang === 'ar' ? `أهلاً بيك! أنا المساعد الذكي لـ ${data.nameAr}. اختار طريقة الرد (نص أو صوت) واسألني في المنهج!` : `Welcome! I'm ${data.nameEn}'s AI.` 
             }]);
         });
-    }, [teacherId]);
+    }, [teacherId, lang]);
 
     // Scroll to bottom of chat
     useEffect(() => {
         if(chatBoxRef.current) chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
     }, [messages, isTyping]);
 
-    const toggleMode = () => {
-        const newTheme = theme === 'dark' ? 'light' : 'dark';
-        setTheme(newTheme);
-        localStorage.setItem('pixel_theme', newTheme);
-        if (newTheme === 'light') {
-            document.body.classList.add('light-mode');
-        } else {
-            document.body.classList.remove('light-mode');
-        }
-    };
-
-    const toggleLang = () => {
-        const newLang = lang === 'ar' ? 'en' : 'ar';
-        setLang(newLang);
-        localStorage.setItem('pixel_lang', newLang);
-        document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr';
-        document.documentElement.lang = newLang;
-    };
-
     // ================= CHAT LOGIC =================
     const handleSendChat = () => {
         if(!chatInput.trim()) return;
         
-        // Add User Message
         const newMsgId = messages.length + 2;
         setMessages(prev => [...prev, { id: newMsgId, sender: 'user', type: 'text', content: chatInput }]);
         setChatInput("");
         setIsTyping(true);
 
-        // Simulate Bot Response (Backend AI Call goes here)
         setTimeout(() => {
             setIsTyping(false);
             setMessages(prev => [...prev, { 
                 id: newMsgId + 1, 
                 sender: 'bot', 
                 type: replyFormat as 'text'|'voice', 
-                content: replyFormat === 'text' ? "بالنسبة لسؤالك، أول خطوة هي تحديد الجمهور المستهدف بدقة." : "0:15" // Voice duration mock
+                content: replyFormat === 'text' ? (lang === 'ar' ? "بالنسبة لسؤالك، أول خطوة هي تحديد الجمهور المستهدف بدقة." : "For your question, the first step is targeting the audience.") : "0:15" 
             }]);
         }, 1500);
     };
@@ -134,24 +99,28 @@ export default function TeacherProfile({ params }: { params: Promise<{ id: strin
     const toggleMic = () => {
         setIsRecording(!isRecording);
         if(!isRecording) {
-            // Simulate voice to text
             setTimeout(() => { 
-                setChatInput("اشرحلي إزاي أعمل خطة تسويقية؟"); 
+                setChatInput(lang === 'ar' ? "اشرحلي إزاي أعمل خطة تسويقية؟" : "Explain how to make a marketing plan?"); 
                 setIsRecording(false); 
             }, 2000);
         }
     };
 
-    if (!mounted || !teacher) return null;
+    // 💡 3. شاشة تحميل شيك لو الداتا لسه بتيجي
+    if (!mounted || !teacher) return (
+        <main className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <div style={{ width: '50px', height: '50px', border: '4px solid rgba(108,92,231,0.2)', borderTopColor: 'var(--p-purple)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+            <style dangerouslySetInnerHTML={{__html: `@keyframes spin { 100% { transform: rotate(360deg); } }`}} />
+        </main>
+    );
 
-    // Filter Courses
     const filteredCourses = teacher.courses.filter((c:any) => c.grade === currentGrade);
     const coursesToShow = filteredCourses.slice(0, visibleCourses);
     const hasMore = visibleCourses < filteredCourses.length;
 
     return (
-        <main style={{ position: 'relative', width: '100%', minHeight: '100vh', overflowX: 'hidden', paddingTop: '80px' }}>
-            <Navbar lang={lang} theme={theme} toggleLang={toggleLang} toggleMode={toggleMode} />
+        // 💡 4. استخدام الكلاس السحري
+        <main className="page-wrapper">
 
             {/* Profile Banner */}
             <section className="profile-banner">
@@ -173,8 +142,8 @@ export default function TeacherProfile({ params }: { params: Promise<{ id: strin
             </section>
 
             {/* Courses Section */}
-            <section className="courses-section">
-                <h2 className="section-title" style={{ fontSize: '2rem', marginBottom: '25px', borderRight: lang==='ar'?'5px solid var(--p-purple)':'none', paddingRight: lang==='ar'?'15px':'0' }}>
+            <section className="courses-section" style={{ marginTop: '40px' }}>
+                <h2 className="section-title" style={{ fontSize: '2rem', marginBottom: '25px', borderRight: lang==='ar'?'5px solid var(--p-purple)':'none', borderLeft: lang==='en'?'5px solid var(--p-purple)':'none', paddingRight: lang==='ar'?'15px':'0', paddingLeft: lang==='en'?'15px':'0' }}>
                     {lang === 'ar' ? 'كورسات المدرس' : "Teacher's Courses"}
                 </h2>
                 
@@ -190,7 +159,7 @@ export default function TeacherProfile({ params }: { params: Promise<{ id: strin
                     ))}
                 </div>
                 
-                <div className="courses-grid">
+                <div className="courses-grid" style={{ marginTop: '20px' }}>
                     {coursesToShow.length > 0 ? (
                         coursesToShow.map((c:any) => (
                             <div key={c.id} className="course-card">
@@ -221,13 +190,13 @@ export default function TeacherProfile({ params }: { params: Promise<{ id: strin
             </section>
 
             {/* Ask Teacher (AI Chat) Section */}
-            <section className="ask-section">
+            <section className="ask-section" style={{ marginTop: '50px' }}>
                 <div className="ai-glass-card">
                     <div className="chat-header">
                         <img src={teacher.img} alt="Teacher" />
                         <div>
                             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px', fontSize: '1.4rem' }}>
-                                اسأل {lang === 'ar' ? teacher.nameAr : teacher.nameEn} <span className="status-dot"></span>
+                                {lang === 'ar' ? `اسأل ${teacher.nameAr}` : `Ask ${teacher.nameEn}`} <span className="status-dot"></span>
                             </h3>
                             <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>
                                 {lang === 'ar' ? 'مساعد ذكي مدرب على المنهج' : 'AI Assistant trained on curriculum'}
@@ -243,7 +212,7 @@ export default function TeacherProfile({ params }: { params: Promise<{ id: strin
                                     <p>{msg.content}</p>
                                 ) : (
                                     <div>
-                                        <span style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>إجابة سؤالك جاهزة في الريكورد ده:</span>
+                                        <span style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>{lang === 'ar' ? 'إجابة سؤالك جاهزة في الريكورد ده:' : 'Your answer is ready in this record:'}</span>
                                         <div className="voice-note">
                                             <button className="play-btn"><FaPlay size={12} /></button>
                                             <div className="waveform">
@@ -258,7 +227,7 @@ export default function TeacherProfile({ params }: { params: Promise<{ id: strin
                         ))}
                         {isTyping && (
                             <div className="msg bot">
-                                <p style={{ opacity: 0.7 }}>جاري التحليل...</p>
+                                <p style={{ opacity: 0.7 }}>{lang === 'ar' ? 'جاري التحليل...' : 'Analyzing...'}</p>
                             </div>
                         )}
                     </div>
@@ -305,7 +274,6 @@ export default function TeacherProfile({ params }: { params: Promise<{ id: strin
                 </div>
             </section>
 
-            <Footer />
         </main>
     );
 }

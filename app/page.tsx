@@ -1,21 +1,18 @@
 "use client";
 import React, { useEffect } from 'react';
-import Navbar from '../components/layout/Navbar';
 import Hero from '../components/home/Hero';
 import CoursesSection from '../components/home/CoursesSection';
 import ServicesSection from '../components/home/ServicesSection';
 import OffersSection from '../components/home/OffersSection';
-import Footer from '../components/layout/Footer';
 
-// 💡 سحب الإعدادات المركزية
+// استدعاء اللغة بس عشان نبعتها للأقسام
 import { useSettings } from '../context/SettingsContext';
 
 export default function Home() {
-    // 💡 سحبنا اللغة بس عشان نبعتها للأقسام (بدون ما نكتب دوال التغيير هنا)
     const { lang } = useSettings();
 
     useEffect(() => {
-        // أنيميشن الظهور (Reveal) بس هو اللي يفضل هنا
+        // أنيميشن الظهور (Reveal)
         const observerOptions = { threshold: 0.15, rootMargin: "0px 0px -50px 0px" };
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -31,9 +28,8 @@ export default function Home() {
     }, []);
 
     return (
-        <main style={{ position: 'relative', width: '100%', overflowX: 'hidden' }}>
-            {/* 💡 الناف بار بقى طلقة ومش محتاج نبعتله أي Props */}
-            <Navbar />
+        // مسحنا الستايلات القديمة واعتمدنا على الكلاس النظيف
+        <main className="page-wrapper">
             
             <Hero lang={lang} />
             <CoursesSection lang={lang} />
@@ -43,6 +39,7 @@ export default function Home() {
                 <div className="forum-card reveal active">
                     <div className="forum-glow-bg1"></div>
                     <div className="forum-glow-bg2"></div>
+                    
                     <div className="forum-content" style={{ zIndex: 2, position: 'relative' }}>
                         <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', marginBottom: '15px', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
                             {lang === 'ar' ? 'مجتمع بيكسل الحصري 🚀' : 'Exclusive Pixel Community 🚀'}
@@ -56,7 +53,7 @@ export default function Home() {
             </section>
 
             <OffersSection lang={lang} />
-            <Footer />
+            
         </main>
     );
 }

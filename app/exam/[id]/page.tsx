@@ -1,13 +1,14 @@
 "use client";
 import React, { useState, useEffect, use } from 'react';
-import Navbar from '../../../components/layout/Navbar';
-import Footer from '../../../components/layout/Footer';
 import { 
     FaClock, FaListOl, FaHourglassHalf, FaCamera, FaEye, 
     FaPlayCircle, FaArrowRight, FaClipboardCheck 
 } from 'react-icons/fa';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
+// 💡 1. استدعاء مركز الإعدادات الموحد
+import { useSettings } from '../../../context/SettingsContext';
 
 // =========================================================================
 // 💡 MOCK EXAM DATA
@@ -40,9 +41,10 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
     const examId = resolvedParams.id;
     const router = useRouter();
 
+    // 💡 2. سحب اللغة من الـ Context
+    const { lang } = useSettings();
+
     const [mounted, setMounted] = useState(false);
-    const [theme, setTheme] = useState('dark');
-    const [lang, setLang] = useState('ar');
     const [exam, setExam] = useState<any>(null);
 
     // Exam Logic States
@@ -54,12 +56,6 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
     // Load Initial Data
     useEffect(() => {
         setMounted(true);
-        const savedTheme = localStorage.getItem('pixel_theme') || 'dark';
-        const savedLang = localStorage.getItem('pixel_lang') || 'ar';
-        setTheme(savedTheme); setLang(savedLang);
-        if (savedTheme === 'light') document.body.classList.add('light-mode');
-        document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
-
         fetchExamData(examId).then(data => {
             setExam(data);
             setTimeLeft(data.timeLimit * 60);
@@ -78,9 +74,6 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
         }
         return () => clearInterval(timer);
     }, [step, timeLeft]);
-
-    const toggleMode = () => { setTheme(theme === 'dark' ? 'light' : 'dark'); if(theme === 'dark') document.body.classList.add('light-mode'); else document.body.classList.remove('light-mode'); localStorage.setItem('pixel_theme', theme === 'dark' ? 'light' : 'dark'); };
-    const toggleLang = () => { const newLang = lang === 'ar' ? 'en' : 'ar'; setLang(newLang); document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr'; localStorage.setItem('pixel_lang', newLang); };
 
     // Helpers
     const formatTime = (seconds: number) => {
@@ -122,34 +115,40 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
         setStep('result');
     };
 
-    if (!mounted || !exam) return null;
+    // 💡 3. شاشة تحميل شيك
+    if (!mounted || !exam) return (
+        <main className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <div style={{ width: '50px', height: '50px', border: '4px solid rgba(108,92,231,0.2)', borderTopColor: 'var(--p-purple)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+            <style dangerouslySetInnerHTML={{__html: `@keyframes spin { 100% { transform: rotate(360deg); } }`}} />
+        </main>
+    );
 
     const currentQ = exam.questions[currentQIndex];
 
     return (
-        <main style={{ position: 'relative', width: '100%', minHeight: '100vh', overflowX: 'hidden', paddingTop: '80px' }}>
-            <Navbar lang={lang} theme={theme} toggleLang={toggleLang} toggleMode={toggleMode} />
+        // 💡 4. استخدام الكلاس السحري لحماية التصميم
+        <main className="page-wrapper">
 
-            <div className="exam-container">
+            <div className="exam-container" style={{ width: '100%', maxWidth: '800px', margin: '0 auto', background: 'var(--card)', borderRadius: '20px', padding: '30px', border: '1px solid rgba(108,92,231,0.2)', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}>
                 
                 {/* 🟢 STEP 1: INTRO */}
                 {step === 'intro' && (
-                    <div className="exam-intro">
-                        <h1>{lang === 'ar' ? exam.titleAr : exam.titleEn}</h1>
-                        <p style={{ fontWeight: 'bold', opacity: 0.8 }}>{lang === 'ar' ? exam.lectureAr : exam.lectureEn}</p>
+                    <div className="exam-intro" style={{ textAlign: 'center' }}>
+                        <h1 style={{ color: 'var(--p-purple)', marginBottom: '15px' }}>{lang === 'ar' ? exam.titleAr : exam.titleEn}</h1>
+                        <p style={{ fontWeight: 'bold', color: 'var(--txt-mut)', marginBottom: '30px' }}>{lang === 'ar' ? exam.lectureAr : exam.lectureEn}</p>
                         
-                        <div className="exam-stats">
-                            <div className="ex-stat-box">
-                                <FaClock />
+                        <div className="exam-stats" style={{ display: 'flex', justifyContent: 'center', gap: '30px', marginBottom: '40px' }}>
+                            <div className="ex-stat-box" style={{ background: 'var(--h-bg)', padding: '20px', borderRadius: '15px', minWidth: '120px' }}>
+                                <FaClock style={{ fontSize: '2rem', color: 'var(--warning)', marginBottom: '10px' }} />
                                 <h4>{exam.timeLimit} {lang === 'ar' ? 'دقيقة' : 'Mins'}</h4>
                             </div>
-                            <div className="ex-stat-box">
-                                <FaListOl />
+                            <div className="ex-stat-box" style={{ background: 'var(--h-bg)', padding: '20px', borderRadius: '15px', minWidth: '120px' }}>
+                                <FaListOl style={{ fontSize: '2rem', color: 'var(--success)', marginBottom: '10px' }} />
                                 <h4>{exam.questions.length} {lang === 'ar' ? 'أسئلة' : 'Questions'}</h4>
                             </div>
                         </div>
 
-                        <button className="btn-start-exam" onClick={startExam}>
+                        <button className="btn-start-exam glow-btn" onClick={startExam} style={{ background: 'var(--p-purple)', color: '#fff', border: 'none', padding: '15px 40px', borderRadius: '50px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', transition: '0.3s' }}>
                             {lang === 'ar' ? 'ابدأ الامتحان الآن' : 'Start Exam Now'}
                         </button>
                     </div>
@@ -158,30 +157,35 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
                 {/* 🔴 STEP 2: LIVE EXAM */}
                 {step === 'live' && (
                     <div>
-                        <div className="exam-header">
-                            <div style={{ fontWeight: 'bold', color: 'var(--p-purple)' }}>
+                        <div className="exam-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px solid var(--h-bg)' }}>
+                            <div style={{ fontWeight: 'bold', color: 'var(--p-purple)', fontSize: '1.2rem' }}>
                                 {lang === 'ar' ? 'السؤال' : 'Question'} {currentQIndex + 1} {lang === 'ar' ? 'من' : 'of'} {exam.questions.length}
                             </div>
-                            <div className={`timer ${timeLeft > 60 ? 'safe' : ''}`}>
+                            <div className={`timer ${timeLeft < 60 ? 'danger' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: timeLeft < 60 ? 'rgba(231, 76, 60, 0.1)' : 'var(--h-bg)', color: timeLeft < 60 ? '#e74c3c' : 'var(--warning)', padding: '10px 20px', borderRadius: '50px', fontWeight: 'bold', fontSize: '1.2rem' }}>
                                 <FaHourglassHalf /> {formatTime(timeLeft)}
                             </div>
                         </div>
 
-                        <div className="question-card">
-                            <div className="q-meta">
-                                <span className="q-type">{currentQ.type === 'mcq' ? (lang === 'ar' ? 'اختيار من متعدد' : 'Multiple Choice') : (lang === 'ar' ? 'مقالي' : 'Essay')}</span>
+                        <div className="question-card" style={{ marginBottom: '40px' }}>
+                            <div className="q-meta" style={{ marginBottom: '15px' }}>
+                                <span className="q-type" style={{ background: 'var(--p-purple)', color: '#fff', padding: '5px 15px', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                    {currentQ.type === 'mcq' ? (lang === 'ar' ? 'اختيار من متعدد' : 'Multiple Choice') : (lang === 'ar' ? 'مقالي' : 'Essay')}
+                                </span>
                             </div>
-                            <h3 className="q-text">{lang === 'ar' ? currentQ.textAr : currentQ.textEn}</h3>
+                            <h3 className="q-text" style={{ fontSize: '1.5rem', lineHeight: '1.6', marginBottom: '25px', color: 'var(--txt)' }}>
+                                {lang === 'ar' ? currentQ.textAr : currentQ.textEn}
+                            </h3>
                             
                             {currentQ.type === 'mcq' && (
-                                <div className="options-grid">
+                                <div className="options-grid" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                     {(lang === 'ar' ? currentQ.optionsAr : currentQ.optionsEn).map((opt: string, i: number) => (
-                                        <label key={i} className={`opt-label ${answers[currentQ.id] === i ? 'selected' : ''}`}>
+                                        <label key={i} className={`opt-label ${answers[currentQ.id] === i ? 'selected' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', background: answers[currentQ.id] === i ? 'rgba(108,92,231,0.1)' : 'var(--h-bg)', border: `2px solid ${answers[currentQ.id] === i ? 'var(--p-purple)' : 'transparent'}`, borderRadius: '15px', cursor: 'pointer', transition: '0.3s', fontWeight: answers[currentQ.id] === i ? 'bold' : 'normal', color: 'var(--txt)' }}>
                                             <input 
                                                 type="radio" 
                                                 name={`q_${currentQ.id}`} 
                                                 checked={answers[currentQ.id] === i}
                                                 onChange={() => handleAnswerChange(currentQ.id, i)}
+                                                style={{ width: '20px', height: '20px', accentColor: 'var(--p-purple)' }}
                                             /> 
                                             {opt}
                                         </label>
@@ -190,15 +194,19 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
                             )}
 
                             {currentQ.type === 'essay' && (
-                                <div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                     <textarea 
                                         className="essay-area" 
                                         placeholder={lang === 'ar' ? 'اكتب إجابتك هنا...' : 'Type your answer here...'}
                                         value={answers[currentQ.id] || ''}
                                         onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
+                                        style={{ width: '100%', minHeight: '150px', padding: '20px', borderRadius: '15px', background: 'var(--h-bg)', border: '2px solid transparent', color: 'var(--txt)', outline: 'none', resize: 'vertical', fontSize: '1rem' }}
                                     ></textarea>
+                                    
                                     <div style={{ position: 'relative', width: '100%' }}>
-                                        <button className="btn-upload"><FaCamera /> {lang === 'ar' ? 'التقط صورة أو ارفع ملف' : 'Upload Picture'}</button>
+                                        <button className="btn-upload glow-btn" style={{ width: '100%', padding: '15px', background: 'var(--bg)', color: 'var(--p-purple)', border: '2px dashed var(--p-purple)', borderRadius: '15px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                                            <FaCamera /> {lang === 'ar' ? 'التقط صورة أو ارفع ملف للإجابة' : 'Upload Picture of Answer'}
+                                        </button>
                                         <input 
                                             type="file" accept="image/*" 
                                             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
@@ -211,17 +219,17 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
                             )}
                         </div>
 
-                        <div className="exam-footer">
-                            <button className="btn-nav-exam" onClick={handlePrev} disabled={currentQIndex === 0}>
+                        <div className="exam-footer" style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid var(--h-bg)', paddingTop: '20px' }}>
+                            <button className="btn-nav-exam" onClick={handlePrev} disabled={currentQIndex === 0} style={{ padding: '12px 25px', borderRadius: '10px', background: 'var(--h-bg)', color: 'var(--txt)', border: 'none', cursor: currentQIndex === 0 ? 'not-allowed' : 'pointer', opacity: currentQIndex === 0 ? 0.5 : 1, fontWeight: 'bold' }}>
                                 {lang === 'ar' ? 'السابق' : 'Previous'}
                             </button>
                             
                             {currentQIndex === exam.questions.length - 1 ? (
-                                <button className="btn-submit-exam" onClick={handleSubmit}>
+                                <button className="btn-submit-exam glow-btn" onClick={handleSubmit} style={{ padding: '12px 30px', borderRadius: '10px', background: 'var(--success)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
                                     {lang === 'ar' ? 'تسليم الامتحان' : 'Submit Exam'}
                                 </button>
                             ) : (
-                                <button className="btn-nav-exam" onClick={handleNext}>
+                                <button className="btn-nav-exam glow-btn" onClick={handleNext} style={{ padding: '12px 30px', borderRadius: '10px', background: 'var(--p-purple)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
                                     {lang === 'ar' ? 'التالي' : 'Next'}
                                 </button>
                             )}
@@ -231,18 +239,20 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
 
                 {/* 🔵 STEP 3: RESULT */}
                 {step === 'result' && (
-                    <div className="result-card">
-                        <h2>{lang === 'ar' ? 'نتيجة الامتحان' : 'Exam Result'}</h2>
-                        <div className="score-circle">100%</div> {/* Mock Score */}
-                        <h3 style={{ color: '#2ecc71', marginBottom: '25px', fontWeight: 900 }}>
+                    <div className="result-card" style={{ textAlign: 'center', padding: '40px 0' }}>
+                        <h2 style={{ color: 'var(--txt)', marginBottom: '30px' }}>{lang === 'ar' ? 'نتيجة الامتحان' : 'Exam Result'}</h2>
+                        <div className="score-circle" style={{ width: '150px', height: '150px', borderRadius: '50%', background: 'linear-gradient(45deg, var(--success), #2ecc71)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', fontWeight: 900, margin: '0 auto 30px', boxShadow: '0 10px 30px rgba(46, 204, 113, 0.4)' }}>
+                            100%
+                        </div>
+                        <h3 style={{ color: 'var(--success)', marginBottom: '40px', fontWeight: 900, fontSize: '1.5rem' }}>
                             {lang === 'ar' ? 'لقد اجتزت الامتحان بتفوق 🎉' : 'You passed the exam successfully 🎉'}
                         </h3>
                         
                         <div className="action-buttons-row" style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <button className="btn-nav-exam" onClick={() => setStep('review')}>
-                                <FaEye style={{ margin: '0 5px' }} /> {lang === 'ar' ? 'عرض الإجابات' : 'Review Answers'}
+                            <button className="btn-nav-exam glow-btn" onClick={() => setStep('review')} style={{ padding: '12px 25px', borderRadius: '50px', background: 'var(--p-purple)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                <FaEye /> {lang === 'ar' ? 'عرض الإجابات' : 'Review Answers'}
                             </button>
-                            <button className="btn-continue" onClick={() => router.back()}>
+                            <button className="btn-continue glow-btn" onClick={() => router.back()} style={{ padding: '12px 25px', borderRadius: '50px', background: 'var(--h-bg)', color: 'var(--txt)', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
                                 <FaPlayCircle /> {lang === 'ar' ? 'العودة للمحاضرة' : 'Back to Lecture'}
                             </button>
                         </div>
@@ -252,34 +262,46 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
                 {/* 🟡 STEP 4: REVIEW */}
                 {step === 'review' && (
                     <div>
-                        <div className="review-header">
-                            <h2><FaClipboardCheck /> {lang === 'ar' ? 'مراجعة الإجابات النموذجية' : 'Review Answers'}</h2>
-                            <button className="btn-continue" onClick={() => router.back()}>
+                        <div className="review-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px solid var(--h-bg)' }}>
+                            <h2 style={{ color: 'var(--p-purple)', display: 'flex', alignItems: 'center', gap: '10px' }}><FaClipboardCheck /> {lang === 'ar' ? 'مراجعة الإجابات' : 'Review Answers'}</h2>
+                            <button className="btn-continue" onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--txt-mut)', cursor: 'pointer', fontWeight: 'bold' }}>
                                 <FaArrowRight style={{ transform: lang === 'ar' ? 'rotate(180deg)' : 'none' }} /> 
-                                {lang === 'ar' ? 'العودة للمحاضرة' : 'Back to Lecture'}
+                                {lang === 'ar' ? 'العودة' : 'Back'}
                             </button>
                         </div>
 
                         {exam.questions.map((q: any, i: number) => {
-                            const isCorrect = q.type === 'mcq' ? answers[q.id] === q.correctAns : false; // Essay requires manual review usually
-                            const ansClass = (q.type === 'mcq' && isCorrect) ? 'ans-correct' : 'ans-wrong';
-
+                            const isCorrect = q.type === 'mcq' ? answers[q.id] === q.correctAns : false; 
+                            
                             return (
-                                <div key={q.id} className="review-box">
-                                    <h3 style={{ marginBottom: '10px' }}>{lang === 'ar' ? 'س' : 'Q'}{i + 1}: {lang === 'ar' ? q.textAr : q.textEn}</h3>
+                                <div key={q.id} className="review-box" style={{ background: 'var(--bg)', padding: '25px', borderRadius: '15px', marginBottom: '20px', border: `1px solid ${q.type === 'mcq' ? (isCorrect ? 'var(--success)' : 'var(--danger)') : 'var(--warning)'}` }}>
+                                    <h3 style={{ marginBottom: '15px', color: 'var(--txt)', lineHeight: '1.5' }}>
+                                        <span style={{ color: 'var(--p-purple)', marginRight: lang==='ar'?'0':'10px', marginLeft: lang==='ar'?'10px':'0' }}>{lang === 'ar' ? 'س' : 'Q'}{i + 1}:</span> 
+                                        {lang === 'ar' ? q.textAr : q.textEn}
+                                    </h3>
                                     
-                                    <div className={ansClass}>
+                                    <div style={{ background: 'var(--h-bg)', padding: '20px', borderRadius: '10px' }}>
                                         {q.type === 'mcq' && (
-                                            <span className={isCorrect ? 'badge-true' : 'badge-false'}>
-                                                {isCorrect ? (lang === 'ar' ? 'إجابتك صحيحة' : 'Correct') : (lang === 'ar' ? 'إجابة خاطئة' : 'Wrong')}
-                                            </span>
+                                            <div style={{ marginBottom: '15px' }}>
+                                                <span style={{ display: 'inline-block', padding: '5px 15px', borderRadius: '50px', background: isCorrect ? 'rgba(46, 204, 113, 0.1)' : 'rgba(231, 76, 60, 0.1)', color: isCorrect ? 'var(--success)' : 'var(--danger)', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                                                    {isCorrect ? (lang === 'ar' ? 'إجابتك صحيحة' : 'Correct') : (lang === 'ar' ? 'إجابة خاطئة' : 'Wrong')}
+                                                </span>
+                                            </div>
                                         )}
-                                        <br /><br />
-                                        <strong>{lang === 'ar' ? 'إجابتك:' : 'Your Answer:'}</strong> 
-                                        {q.type === 'mcq' ? (answers[q.id] !== undefined ? (lang === 'ar' ? q.optionsAr[answers[q.id]] : q.optionsEn[answers[q.id]]) : '---') : (answers[q.id] || '---')}
                                         
-                                        <br /><br />
-                                        <strong>{lang === 'ar' ? 'الإجابة النموذجية:' : 'Model Answer:'}</strong> {lang === 'ar' ? q.explanationAr : q.explanationEn}
+                                        <div style={{ marginBottom: '15px', color: 'var(--txt)' }}>
+                                            <strong style={{ color: 'var(--p-purple)' }}>{lang === 'ar' ? 'إجابتك:' : 'Your Answer:'}</strong> <br/>
+                                            <span style={{ display: 'inline-block', marginTop: '5px' }}>
+                                                {q.type === 'mcq' ? (answers[q.id] !== undefined ? (lang === 'ar' ? q.optionsAr[answers[q.id]] : q.optionsEn[answers[q.id]]) : '---') : (answers[q.id] || '---')}
+                                            </span>
+                                        </div>
+                                        
+                                        <div style={{ color: 'var(--txt)' }}>
+                                            <strong style={{ color: 'var(--success)' }}>{lang === 'ar' ? 'الإجابة النموذجية:' : 'Model Answer:'}</strong> <br/>
+                                            <span style={{ display: 'inline-block', marginTop: '5px' }}>
+                                                {lang === 'ar' ? q.explanationAr : q.explanationEn}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -288,7 +310,6 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
                 )}
 
             </div>
-            <Footer />
         </main>
     );
 }

@@ -1,7 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// 1. تعريف شكل البيانات
 interface SettingsContextType {
     theme: string;
     lang: string;
@@ -9,14 +8,12 @@ interface SettingsContextType {
     toggleLang: () => void;
 }
 
-// 2. إنشاء الـ Context
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
-// 3. إنشاء المزود (Provider) اللي هيغلف الموقع
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-    const [theme, setTheme] = useState<string>('dark');
-    const [lang, setLang] = useState<string>('ar');
-    const [mounted, setMounted] = useState<boolean>(false);
+    const [theme, setTheme] = useState('dark');
+    const [lang, setLang] = useState('ar');
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -26,7 +23,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         setTheme(savedTheme);
         setLang(savedLang);
 
-        if (savedTheme === 'light') document.body.classList.add('light-mode');
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+        } else {
+            document.body.classList.remove('light-mode');
+        }
+
         document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
         document.documentElement.lang = savedLang;
     }, []);
@@ -46,9 +48,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         document.documentElement.lang = newLang;
     };
 
-    // منع مشاكل الريندر قبل تحميل العميل (Hydration Fix)
-    if (!mounted) return <div style={{ visibility: 'hidden' }}>{children}</div>;
-
+    // 💡 التعديل هنا: الـ Provider بقى بيغلف المحتوى فوراً وبدون أي شروط تأخير
     return (
         <SettingsContext.Provider value={{ theme, lang, toggleMode, toggleLang }}>
             {children}
@@ -56,9 +56,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-// 4. Hook مخصص لاستدعاء الإعدادات في أي مكان بسهولة
-export function useSettings() {
+export const useSettings = () => {
     const context = useContext(SettingsContext);
-    if (!context) throw new Error("useSettings must be used within a SettingsProvider");
+    if (!context) throw new Error("useSettings must be used within SettingsProvider");
     return context;
-}
+};

@@ -2,14 +2,16 @@ import React from 'react';
 import Link from 'next/link';
 import { Lecture } from '../../types';
 
-interface SidebarProps {
+// 💡 هنا اسم الكتالوج Props
+interface Props {
     lectures: Lecture[];
     currentLectureId: string;
-    courseId: string | number;
-    lang: string;
+    courseId: string;
+    lang: string; 
 }
 
-export default function LectureSidebar({ lectures, currentLectureId, courseId, lang }: SidebarProps) {
+// 💡 التعديل هنا: غيرنا SidebarProps لـ Props عشان تطابق اللي فوق
+export default function LectureSidebar({ lectures, currentLectureId, courseId, lang }: Props) {
     return (
         <aside className="lecture-sidebar" style={{ background: 'var(--card)', padding: '20px', borderRadius: '15px', border: '1px solid rgba(108,92,231,0.2)' }}>
             <h3 style={{ marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>

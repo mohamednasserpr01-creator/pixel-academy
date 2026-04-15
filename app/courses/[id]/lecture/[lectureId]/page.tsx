@@ -1,7 +1,9 @@
 "use client";
 import React, { useState, useEffect, useRef, use } from 'react';
-import Navbar from '../../../../../components/layout/Navbar';
-import Footer from '../../../../../components/layout/Footer';
+
+// 💡 1. مسحنا استدعاء الناف بار والفوتر من هنا
+import { useSettings } from '../../../../../context/SettingsContext'; // تأكد من مسار المركز السري بتاعنا
+
 import { 
     FaPlay, FaPause, FaBackward, FaForward, FaTachometerAlt, FaCog, FaExpand, FaVolumeUp,
     FaCheck, FaLock, FaFilePdf, FaPencilAlt, FaClipboardCheck, FaComments, FaEllipsisV,
@@ -37,12 +39,11 @@ export default function LectureRoom({ params }: { params: Promise<{ id: string, 
     const lectureId = resolvedParams.lectureId;
 
     const [mounted, setMounted] = useState(false);
-    const [theme, setTheme] = useState('dark');
-    const [lang, setLang] = useState('ar');
     const [lecture, setLecture] = useState<any>(null);
-
-    // 💡 Active Item State
     const [activeItem, setActiveItem] = useState<any>(null);
+
+    // 💡 2. سحب اللغة من المركز مباشرة
+    const { lang } = useSettings();
 
     // Video Player States
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -63,19 +64,12 @@ export default function LectureRoom({ params }: { params: Promise<{ id: string, 
 
     useEffect(() => {
         setMounted(true);
-        const savedTheme = localStorage.getItem('pixel_theme') || 'dark';
-        const savedLang = localStorage.getItem('pixel_lang') || 'ar';
-        setTheme(savedTheme); setLang(savedLang);
-        if (savedTheme === 'light') document.body.classList.add('light-mode');
-        document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
-
         fetchLectureData(courseId, lectureId).then(data => {
             setLecture(data);
             const firstActive = data.playlist.find((i:any) => i.status === 'active' || i.status === 'available' || i.status === 'completed');
             setActiveItem(firstActive || data.playlist[0]);
             
-            // إضافة الرسالة الترحيبية بمعرف آمن
-            setChatMsgs([{ id: generateId(), sender: 'bot', text: savedLang === 'ar' ? 'أهلاً بك يا بطل! كيف تفضل المساعدة اليوم؟' : 'Hello! How can I help you today?' }]);
+            setChatMsgs([{ id: generateId(), sender: 'bot', text: lang === 'ar' ? 'أهلاً بك يا بطل! كيف تفضل المساعدة اليوم؟' : 'Hello! How can I help you today?' }]);
         });
 
         const wmInterval = setInterval(() => {
@@ -83,9 +77,8 @@ export default function LectureRoom({ params }: { params: Promise<{ id: string, 
         }, 4000);
 
         return () => clearInterval(wmInterval);
-    }, [courseId, lectureId]);
+    }, [courseId, lectureId, lang]); // ضفنا الـ lang هنا عشان الشات يتحدث لو اللغة اتغيرت
 
-    // Reset Video States when activeItem changes
     useEffect(() => {
         if (activeItem && activeItem.type === 'video' && videoRef.current) {
             setIsPlaying(false);
@@ -102,9 +95,6 @@ export default function LectureRoom({ params }: { params: Promise<{ id: string, 
     }, []);
 
     useEffect(() => { if(chatBoxRef.current) chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight; }, [chatMsgs]);
-
-    const toggleMode = () => { setTheme(theme === 'dark' ? 'light' : 'dark'); if(theme === 'dark') document.body.classList.add('light-mode'); else document.body.classList.remove('light-mode'); localStorage.setItem('pixel_theme', theme === 'dark' ? 'light' : 'dark'); };
-    const toggleLang = () => { const newLang = lang === 'ar' ? 'en' : 'ar'; setLang(newLang); document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr'; localStorage.setItem('pixel_lang', newLang); };
 
     // ================= VIDEO PLAYER LOGIC =================
     const formatTime = (sec: number) => { let m=Math.floor(sec/60), s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; };
@@ -233,9 +223,9 @@ export default function LectureRoom({ params }: { params: Promise<{ id: string, 
     };
 
     return (
-        <main style={{ position: 'relative', width: '100%', minHeight: '100vh', overflowX: 'hidden', paddingTop: '80px' }}>
-            <Navbar lang={lang} theme={theme} toggleLang={toggleLang} toggleMode={toggleMode} />
-
+        // 💡 3. الكلاس السحري لحماية التصميم بدل الستايلات القديمة
+        <main className="page-wrapper" style={{ paddingTop: '50px' }}>
+            
             <div className="room-container">
                 <main className="main-content">
                     
@@ -308,8 +298,6 @@ export default function LectureRoom({ params }: { params: Promise<{ id: string, 
                     </div>
                 </aside>
             </div>
-
-            <Footer />
         </main>
     );
 }

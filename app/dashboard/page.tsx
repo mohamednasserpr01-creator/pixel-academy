@@ -3,11 +3,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic'; 
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
-import { useTheme } from '../../context/ThemeContext'; // 💡 استخدام النظام الجديد
+
+// 💡 1. استخدام المركز الموحد للإعدادات بدل القديم
+import { useSettings } from '../../context/SettingsContext'; 
 import { FaTimes } from 'react-icons/fa';
 import './dashboard.css'; 
 
-// 💡 1. تعريف التابات كـ Constants ثابتة
 export const TABS = {
     OVERVIEW: 'overview',
     COURSES: 'courses',
@@ -19,7 +20,6 @@ export const TABS = {
     SETTINGS: 'settings'
 } as const;
 
-// 💡 2. استخراج النوع بدقة (TypeScript Strict Typing)
 type TabValue = typeof TABS[keyof typeof TABS];
 
 const Loader = () => <div className="tab-pane active" style={{textAlign: 'center', padding: '50px', fontWeight: 'bold'}}>جاري التحميل... ⏳</div>;
@@ -35,8 +35,7 @@ const SettingsTab = dynamic(() => import('../../components/dashboard/tabs/Settin
 
 const ChatBox = dynamic(() => import('../../components/chat/ChatBox'), { ssr: false });
 
-// 💡 3. استخدام Record مع التايب الجديد (Component Registry Pattern)
-const TAB_COMPONENTS: Record<TabValue, React.ComponentType> = {
+const TAB_COMPONENTS: Record<TabValue, React.ComponentType<any>> = { // 💡 حطينا <any> هنا عشان الـ TS ميعترضش على تمرير الـ lang
     [TABS.OVERVIEW]: OverviewTab,
     [TABS.COURSES]: CoursesTab,
     [TABS.EXAMS]: ExamsTab,
@@ -48,7 +47,9 @@ const TAB_COMPONENTS: Record<TabValue, React.ComponentType> = {
 };
 
 export default function DashboardPage() {
-    const { theme, toggleTheme } = useTheme(); // 💡 الثيم أصبح عالمياً وبسيطاً
+    // 💡 2. سحب الثيم واللغة من المركز
+    const { theme, toggleMode, lang } = useSettings(); 
+    
     const [activeTab, setActiveTab] = useState<TabValue>(TABS.OVERVIEW);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [walletBalance] = useState(1500);
@@ -80,8 +81,9 @@ export default function DashboardPage() {
             <Header 
                 toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
                 theme={theme} 
-                toggleTheme={toggleTheme} 
+                toggleTheme={toggleMode} // ربطنا دالة تغيير الثيم
                 walletBalance={walletBalance} 
+                lang={lang} // 💡 تمرير اللغة للهيدر
             />
 
             <div className="dash-container">
@@ -92,28 +94,46 @@ export default function DashboardPage() {
                     closeMobileSidebar={() => setIsSidebarOpen(false)}
                     currentAvatar={currentAvatar} 
                     openAvatarModal={() => setIsAvatarModalOpen(true)}
+                    lang={lang} // 💡 تمرير اللغة للقائمة الجانبية
                 />
 
                 <main className="dash-content">
-                    <ActiveComponent />
+                    {/* 💡 3. تمرير اللغة للتاب النشط */}
+                    <ActiveComponent lang={lang} />
                 </main>
             </div>
 
             <ChatBox />
 
-            <div className={`modal-overlay ${isAvatarModalOpen ? 'active' : ''}`} onClick={() => setIsAvatarModalOpen(false)}>
-                <div className="modal-box" onClick={e => e.stopPropagation()}>
-                    <button className="close-modal-btn" onClick={() => setIsAvatarModalOpen(false)}><FaTimes /></button>
-                    <h2 style={{color:'var(--p-purple)', marginBottom:'10px'}}>اختر هويتك الافتراضية 🎭</h2>
-                    <h4 style={{textAlign:'right', color:'var(--success)', marginTop:'20px'}}>قسم الأولاد 👨‍🎓</h4>
+            {/* 💡 4. دعم كامل للغتين في نافذة اختيار الشخصية */}
+            <div className={`modal-overlay ${isAvatarModalOpen ? 'active' : ''}`} onClick={() => setIsAvatarModalOpen(false)} style={{ zIndex: 9999 }}>
+                <div className="modal-box" onClick={e => e.stopPropagation()} style={{ direction: lang === 'ar' ? 'rtl' : 'ltr', background: 'var(--card)', border: '1px solid rgba(108,92,231,0.2)' }}>
+                    
+                    <button className="close-modal-btn" onClick={() => setIsAvatarModalOpen(false)} style={{ left: lang === 'ar' ? '15px' : 'auto', right: lang === 'ar' ? 'auto' : '15px', color: '#e74c3c', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>
+                        <FaTimes />
+                    </button>
+                    
+                    <h2 style={{color:'var(--p-purple)', marginBottom:'10px', textAlign: 'center', fontWeight: '900'}}>
+                        {lang === 'ar' ? 'اختر هويتك الافتراضية 🎭' : 'Choose Your Avatar 🎭'}
+                    </h2>
+                    
+                    <h4 style={{textAlign: lang === 'ar' ? 'right' : 'left', color:'var(--success)', marginTop:'20px'}}>
+                        {lang === 'ar' ? 'قسم الأولاد 👨‍🎓' : 'Boys Section 👨‍🎓'}
+                    </h4>
                     <div className="avatar-grid">
                         {boysAvatars.map((url, i) => (<img key={`boy-${i}`} src={url} className={`avatar-option ${tempAvatar === url ? 'selected' : ''}`} onClick={() => setTempAvatar(url)} alt="boy avatar" />))}
                     </div>
-                    <h4 style={{textAlign:'right', color:'var(--danger)', marginTop:'20px'}}>قسم البنات 👩‍🎓</h4>
+                    
+                    <h4 style={{textAlign: lang === 'ar' ? 'right' : 'left', color:'#e84393', marginTop:'20px'}}>
+                        {lang === 'ar' ? 'قسم البنات 👩‍🎓' : 'Girls Section 👩‍🎓'}
+                    </h4>
                     <div className="avatar-grid">
                         {girlsAvatars.map((url, i) => (<img key={`girl-${i}`} src={url} className={`avatar-option ${tempAvatar === url ? 'selected' : ''}`} onClick={() => setTempAvatar(url)} alt="girl avatar" />))}
                     </div>
-                    <button className="btn-resume" style={{width:'100%', justifyContent:'center', marginTop:'20px', fontSize:'1.1rem'}} onClick={saveNewAvatar}>حفظ الصورة الجديدة</button>
+                    
+                    <button className="btn-resume glow-btn" style={{width:'100%', display: 'flex', justifyContent:'center', marginTop:'25px', fontSize:'1.1rem', padding: '12px', background: 'var(--p-purple)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold'}} onClick={saveNewAvatar}>
+                        {lang === 'ar' ? 'حفظ الصورة الجديدة' : 'Save New Avatar'}
+                    </button>
                 </div>
             </div>
         </div>

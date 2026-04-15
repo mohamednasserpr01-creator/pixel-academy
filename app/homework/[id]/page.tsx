@@ -1,12 +1,13 @@
 "use client";
 import React, { useState, useEffect, use } from 'react';
-import Navbar from '../../../components/layout/Navbar';
-import Footer from '../../../components/layout/Footer';
 import { 
     FaExclamationTriangle, FaStar, FaPlayCircle, FaSave, FaPaperPlane, 
-    FaMedal, FaCamera, FaCheckCircle, FaCheckDouble, FaEye, FaClipboardCheck, FaArrowRight 
+    FaMedal, FaCamera, FaCheckCircle, FaCheckDouble, FaEye, FaClipboardCheck 
 } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
+
+// 💡 1. استدعاء المركز الموحد للإعدادات
+import { useSettings } from '../../../context/SettingsContext';
 
 // =========================================================================
 // 💡 MOCK HOMEWORK DATA
@@ -32,9 +33,10 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
     const hwId = resolvedParams.id;
     const router = useRouter();
 
+    // 💡 2. سحب اللغة من السياق الموحد
+    const { lang } = useSettings();
+
     const [mounted, setMounted] = useState(false);
-    const [theme, setTheme] = useState('dark');
-    const [lang, setLang] = useState('ar');
     const [hw, setHw] = useState<any>(null);
 
     // Homework Logic States
@@ -45,17 +47,8 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
     
     useEffect(() => {
         setMounted(true);
-        const savedTheme = localStorage.getItem('pixel_theme') || 'dark';
-        const savedLang = localStorage.getItem('pixel_lang') || 'ar';
-        setTheme(savedTheme); setLang(savedLang);
-        if (savedTheme === 'light') document.body.classList.add('light-mode');
-        document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
-
         fetchHomeworkData(hwId).then(data => setHw(data));
     }, [hwId]);
-
-    const toggleMode = () => { setTheme(theme === 'dark' ? 'light' : 'dark'); if(theme === 'dark') document.body.classList.add('light-mode'); else document.body.classList.remove('light-mode'); localStorage.setItem('pixel_theme', theme === 'dark' ? 'light' : 'dark'); };
-    const toggleLang = () => { const newLang = lang === 'ar' ? 'en' : 'ar'; setLang(newLang); document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr'; localStorage.setItem('pixel_lang', newLang); };
 
     // ================= ACTIONS =================
     const showToast = (msg: string) => {
@@ -94,44 +87,52 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
         }, 1000);
     };
 
-    if (!mounted || !hw) return null;
+    // 💡 3. شاشة تحميل (Spinner)
+    if (!mounted || !hw) return (
+        <main className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <div style={{ width: '50px', height: '50px', border: '4px solid rgba(108,92,231,0.2)', borderTopColor: 'var(--p-purple)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+            <style dangerouslySetInnerHTML={{__html: `@keyframes spin { 100% { transform: rotate(360deg); } }`}} />
+        </main>
+    );
 
     // Progress Calculation
     const answeredCount = hw.questions.filter((q: any) => answers[q.id] && answers[q.id].toString().trim() !== '').length;
     const progressPercent = Math.round((answeredCount / hw.questions.length) * 100);
 
     return (
-        <main style={{ position: 'relative', width: '100%', minHeight: '100vh', overflowX: 'hidden', paddingTop: '80px' }}>
-            <Navbar lang={lang} theme={theme} toggleLang={toggleLang} toggleMode={toggleMode} />
+        // 💡 4. حماية التصميم بالـ page-wrapper
+        <main className="page-wrapper">
 
-            <div className="hw-container">
+            <div className="hw-container" style={{ width: '100%', maxWidth: '900px', margin: '0 auto', background: 'var(--card)', borderRadius: '20px', padding: '30px', border: '1px solid rgba(108,92,231,0.2)', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}>
                 
                 {/* 🔴 STEP 1: LIVE HOMEWORK */}
                 {step === 'live' && (
                     <div id="step-live">
-                        <div className="hw-intro">
-                            {hw.isMandatory && <span className="hw-badge"><FaExclamationTriangle style={{ margin: '0 5px' }} /> {lang === 'ar' ? 'واجب إجباري' : 'Mandatory'}</span>}
-                            <h1>{lang === 'ar' ? hw.titleAr : hw.titleEn}</h1>
-                            <p>{lang === 'ar' ? hw.descAr : hw.descEn}</p>
-                            <div className="hw-total-score"><FaStar style={{ margin: '0 5px' }} /> {lang === 'ar' ? 'إجمالي درجات الواجب:' : 'Total Score:'} {hw.totalScore}</div>
+                        <div className="hw-intro" style={{ marginBottom: '30px', textAlign: 'center' }}>
+                            {hw.isMandatory && <span className="hw-badge" style={{ display: 'inline-block', background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', padding: '5px 15px', borderRadius: '50px', fontWeight: 'bold', marginBottom: '15px' }}><FaExclamationTriangle style={{ margin: '0 5px' }} /> {lang === 'ar' ? 'واجب إجباري' : 'Mandatory'}</span>}
+                            <h1 style={{ color: 'var(--p-purple)', marginBottom: '15px' }}>{lang === 'ar' ? hw.titleAr : hw.titleEn}</h1>
+                            <p style={{ color: 'var(--txt-mut)', marginBottom: '15px' }}>{lang === 'ar' ? hw.descAr : hw.descEn}</p>
+                            <div className="hw-total-score" style={{ fontWeight: 'bold', color: '#f1c40f' }}><FaStar style={{ margin: '0 5px' }} /> {lang === 'ar' ? 'إجمالي درجات الواجب:' : 'Total Score:'} {hw.totalScore}</div>
                         </div>
 
-                        <div className="hw-sticky-bar">
+                        <div className="hw-sticky-bar" style={{ position: 'sticky', top: '80px', background: 'var(--card)', zIndex: 100, padding: '15px 0', borderBottom: '2px solid var(--h-bg)', borderTop: '2px solid var(--h-bg)', marginBottom: '30px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
                             <div className="progress-info">
-                                <div className="progress-text">
+                                <div className="progress-text" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 'bold' }}>
                                     <span>{lang === 'ar' ? 'الأسئلة المجابة:' : 'Answered:'} <b>{answeredCount}</b> {lang === 'ar' ? 'من' : 'of'} <b>{hw.questions.length}</b></span>
-                                    <span style={{ color: 'var(--txt)', opacity: 0.8, fontSize: '0.9rem' }}>{progressPercent}%</span>
+                                    <span style={{ color: 'var(--p-purple)' }}>{progressPercent}%</span>
                                 </div>
-                                <div className="progress-track"><div className="progress-fill" style={{ width: `${progressPercent}%` }}></div></div>
+                                <div className="progress-track" style={{ width: '100%', height: '10px', background: 'var(--h-bg)', borderRadius: '50px', overflow: 'hidden' }}>
+                                    <div className="progress-fill" style={{ width: `${progressPercent}%`, height: '100%', background: 'linear-gradient(90deg, var(--p-purple), #ff007f)', transition: 'width 0.3s ease' }}></div>
+                                </div>
                             </div>
-                            <div className="hw-actions">
-                                <button className="btn-nav-exam" style={{ padding: '8px 15px', display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent' }} onClick={() => router.back()}>
+                            <div className="hw-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                                <button className="btn-nav-exam" style={{ padding: '8px 15px', display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--h-bg)', color: 'var(--txt)', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => router.back()}>
                                     <FaPlayCircle /> {lang === 'ar' ? 'المحاضرة' : 'Lecture'}
                                 </button>
-                                <button className="btn-save-hw" onClick={saveProgress}>
+                                <button className="btn-save-hw" style={{ padding: '8px 15px', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(241, 196, 15, 0.1)', color: '#f1c40f', border: '1px solid #f1c40f', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }} onClick={saveProgress}>
                                     <FaSave /> {lang === 'ar' ? 'حفظ مؤقت' : 'Save'}
                                 </button>
-                                <button className="btn-submit-exam" style={{ padding: '8px 20px', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={submitHomework}>
+                                <button className="btn-submit-exam glow-btn" style={{ padding: '8px 20px', display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--p-purple)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }} onClick={submitHomework}>
                                     <FaPaperPlane /> {lang === 'ar' ? 'تسليم' : 'Submit'}
                                 </button>
                             </div>
@@ -142,24 +143,25 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
                                 const isAnswered = !!answers[q.id] && answers[q.id].toString().trim() !== '';
                                 
                                 return (
-                                    <div key={q.id} className={`q-card ${isAnswered ? 'answered' : ''}`}>
-                                        <div className="q-header">
-                                            <div className="q-number">{lang === 'ar' ? 'السؤال' : 'Q'} {index + 1}</div>
+                                    <div key={q.id} className={`q-card ${isAnswered ? 'answered' : ''}`} style={{ background: isAnswered ? 'rgba(108,92,231,0.05)' : 'var(--bg)', padding: '25px', borderRadius: '15px', marginBottom: '25px', border: `1px solid ${isAnswered ? 'var(--p-purple)' : 'var(--h-bg)'}` }}>
+                                        <div className="q-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                            <div className="q-number" style={{ fontWeight: 'bold', color: 'var(--p-purple)' }}>{lang === 'ar' ? 'السؤال' : 'Q'} {index + 1}</div>
                                             <div className="q-score" style={{ fontWeight: 'bold', color: '#f1c40f', background: 'rgba(241, 196, 15, 0.1)', padding: '5px 12px', borderRadius: '8px' }}>
                                                 <FaMedal /> {lang === 'ar' ? 'الدرجة:' : 'Score:'} {q.score}
                                             </div>
                                         </div>
-                                        <h3 className="q-text" style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '15px' }}>{lang === 'ar' ? q.textAr : q.textEn}</h3>
+                                        <h3 className="q-text" style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '20px', color: 'var(--txt)' }}>{lang === 'ar' ? q.textAr : q.textEn}</h3>
                                         
                                         {q.type === 'mcq' && (
-                                            <div className="options-grid">
+                                            <div className="options-grid" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                                 {(lang === 'ar' ? q.optionsAr : q.optionsEn).map((opt: string, i: number) => (
-                                                    <label key={i} className="opt-label">
+                                                    <label key={i} className="opt-label" style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', background: answers[q.id] === i ? 'rgba(108,92,231,0.1)' : 'var(--h-bg)', border: `2px solid ${answers[q.id] === i ? 'var(--p-purple)' : 'transparent'}`, borderRadius: '15px', cursor: 'pointer', transition: '0.3s', fontWeight: answers[q.id] === i ? 'bold' : 'normal', color: 'var(--txt)' }}>
                                                         <input 
                                                             type="radio" 
                                                             name={`q_${q.id}`} 
                                                             checked={answers[q.id] === i}
                                                             onChange={() => handleAnswerChange(q.id, i)}
+                                                            style={{ width: '20px', height: '20px', accentColor: 'var(--p-purple)' }}
                                                         /> 
                                                         {opt}
                                                     </label>
@@ -168,28 +170,29 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
                                         )}
 
                                         {q.type === 'tf' && (
-                                            <div className="options-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                                                <label className="opt-label">
-                                                    <input type="radio" name={`q_${q.id}`} checked={answers[q.id] === 'true'} onChange={() => handleAnswerChange(q.id, 'true')} /> 
+                                            <div className="options-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                                <label className="opt-label" style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', background: answers[q.id] === 'true' ? 'rgba(108,92,231,0.1)' : 'var(--h-bg)', border: `2px solid ${answers[q.id] === 'true' ? 'var(--p-purple)' : 'transparent'}`, borderRadius: '15px', cursor: 'pointer', fontWeight: answers[q.id] === 'true' ? 'bold' : 'normal', color: 'var(--txt)' }}>
+                                                    <input type="radio" name={`q_${q.id}`} checked={answers[q.id] === 'true'} onChange={() => handleAnswerChange(q.id, 'true')} style={{ width: '20px', height: '20px', accentColor: 'var(--p-purple)' }} /> 
                                                     {lang === 'ar' ? 'صواب' : 'True'}
                                                 </label>
-                                                <label className="opt-label">
-                                                    <input type="radio" name={`q_${q.id}`} checked={answers[q.id] === 'false'} onChange={() => handleAnswerChange(q.id, 'false')} /> 
+                                                <label className="opt-label" style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', background: answers[q.id] === 'false' ? 'rgba(108,92,231,0.1)' : 'var(--h-bg)', border: `2px solid ${answers[q.id] === 'false' ? 'var(--p-purple)' : 'transparent'}`, borderRadius: '15px', cursor: 'pointer', fontWeight: answers[q.id] === 'false' ? 'bold' : 'normal', color: 'var(--txt)' }}>
+                                                    <input type="radio" name={`q_${q.id}`} checked={answers[q.id] === 'false'} onChange={() => handleAnswerChange(q.id, 'false')} style={{ width: '20px', height: '20px', accentColor: 'var(--p-purple)' }} /> 
                                                     {lang === 'ar' ? 'خطأ' : 'False'}
                                                 </label>
                                             </div>
                                         )}
 
                                         {q.type === 'essay' && (
-                                            <div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                                 <textarea 
                                                     className="essay-area" 
                                                     placeholder={lang === 'ar' ? 'اكتب حلك أو ملاحظاتك هنا...' : 'Type your answer here...'}
                                                     value={answers[q.id] || ''}
                                                     onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                                                    style={{ width: '100%', minHeight: '150px', padding: '20px', borderRadius: '15px', background: 'var(--h-bg)', border: '2px solid transparent', color: 'var(--txt)', outline: 'none', resize: 'vertical', fontSize: '1rem' }}
                                                 ></textarea>
                                                 <div style={{ position: 'relative', width: '100%' }}>
-                                                    <button className="btn-upload"><FaCamera /> {lang === 'ar' ? 'إرفاق صورة للحل (اختياري)' : 'Attach Image (Optional)'}</button>
+                                                    <button className="btn-upload glow-btn" style={{ width: '100%', padding: '15px', background: 'var(--bg)', color: 'var(--p-purple)', border: '2px dashed var(--p-purple)', borderRadius: '15px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}><FaCamera /> {lang === 'ar' ? 'إرفاق صورة للحل (اختياري)' : 'Attach Image (Optional)'}</button>
                                                     <input 
                                                         type="file" accept="image/*" 
                                                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
@@ -210,8 +213,8 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
                             })}
                         </div>
 
-                        <div className="hw-footer-actions">
-                            <button className="btn-submit-exam" style={{ margin: '0 auto', fontSize: '1.2rem', padding: '15px 40px', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={submitHomework}>
+                        <div className="hw-footer-actions" style={{ marginTop: '40px', textAlign: 'center' }}>
+                            <button className="btn-submit-exam glow-btn" style={{ margin: '0 auto', fontSize: '1.2rem', padding: '15px 40px', display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 'bold' }} onClick={submitHomework}>
                                 <FaCheckDouble /> {lang === 'ar' ? 'تسليم الواجب النهائي' : 'Final Submit'}
                             </button>
                         </div>
@@ -221,21 +224,21 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
                 {/* 🔵 STEP 2: RESULT */}
                 {step === 'result' && (
                     <div className="hw-result" style={{ display: 'block', textAlign: 'center' }}>
-                        <div className="result-card" style={{ background: 'var(--card)', border: '2px solid #2ecc71', borderRadius: '20px', padding: '40px' }}>
+                        <div className="result-card" style={{ background: 'var(--bg)', border: '2px solid #2ecc71', borderRadius: '20px', padding: '40px' }}>
                             <h2 style={{ marginBottom: '20px', color: 'var(--p-purple)', fontWeight: 900 }}>{lang === 'ar' ? 'نتيجة الواجب 📝' : 'Homework Result 📝'}</h2>
                             <div className="score-circle" style={{ width: '150px', height: '150px', borderRadius: '50%', border: '8px solid #2ecc71', margin: '0 auto 15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 900, color: '#2ecc71' }}>
                                 90%
                             </div>
-                            <div className="grade-text"><FaStar /> {lang === 'ar' ? 'الدرجة:' : 'Score:'} 9 / 10</div>
-                            <h3 style={{ color: '#2ecc71', marginBottom: '25px', fontWeight: 900, fontSize: '1.4rem' }}>
+                            <div className="grade-text" style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--txt)', marginBottom: '15px' }}><FaStar style={{ color: '#f1c40f' }}/> {lang === 'ar' ? 'الدرجة:' : 'Score:'} 9 / 10</div>
+                            <h3 style={{ color: '#2ecc71', marginBottom: '30px', fontWeight: 900, fontSize: '1.4rem' }}>
                                 {lang === 'ar' ? 'أحسنت يا بطل! تم تسليم الواجب بنجاح.' : 'Great job! Homework submitted successfully.'}
                             </h3>
                             
-                            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '30px' }}>
-                                <button className="btn-nav-exam" style={{ background: 'transparent', padding: '13px 30px', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setStep('review')}>
+                            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                <button className="btn-nav-exam glow-btn" style={{ background: 'var(--p-purple)', color: '#fff', border: 'none', padding: '13px 30px', borderRadius: '50px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => setStep('review')}>
                                     <FaEye /> {lang === 'ar' ? 'مراجعة الإجابات' : 'Review Answers'}
                                 </button>
-                                <button className="btn-continue" style={{ background: '#2ecc71', color: 'white', border: 'none', padding: '13px 30px', borderRadius: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => router.back()}>
+                                <button className="btn-continue glow-btn" style={{ background: '#2ecc71', color: 'white', border: 'none', padding: '13px 30px', borderRadius: '50px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => router.back()}>
                                     <FaPlayCircle /> {lang === 'ar' ? 'استكمال المحاضرة' : 'Back to Lecture'}
                                 </button>
                             </div>
@@ -246,36 +249,41 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
                 {/* 🟡 STEP 3: REVIEW */}
                 {step === 'review' && (
                     <div id="step-review">
-                        <div className="review-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', borderBottom: '2px solid var(--p-purple)', paddingBottom: '15px' }}>
+                        <div className="review-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', borderBottom: '2px solid var(--h-bg)', paddingBottom: '20px' }}>
                             <div>
-                                <h2><FaClipboardCheck /> {lang === 'ar' ? 'نموذج إجابات الواجب' : 'Model Answers'}</h2>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 900, marginTop: '10px', background: 'rgba(241, 196, 15, 0.1)', padding: '5px 15px', borderRadius: '8px', display: 'inline-block', border: '1px solid rgba(241, 196, 15, 0.3)' }}>
+                                <h2 style={{ color: 'var(--p-purple)', display: 'flex', alignItems: 'center', gap: '10px' }}><FaClipboardCheck /> {lang === 'ar' ? 'نموذج إجابات الواجب' : 'Model Answers'}</h2>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 900, marginTop: '10px', background: 'rgba(241, 196, 15, 0.1)', color: 'var(--txt)', padding: '5px 15px', borderRadius: '8px', display: 'inline-block', border: '1px solid rgba(241, 196, 15, 0.3)' }}>
                                     {lang === 'ar' ? 'الدرجة النهائية:' : 'Final Score:'} <span style={{ color: '#f1c40f' }}>9 / 10</span>
                                 </div>
                             </div>
-                            <button className="btn-continue" style={{ background: '#2ecc71', color: 'white', border: 'none', padding: '10px 25px', borderRadius: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => router.back()}>
-                                <FaPlayCircle /> {lang === 'ar' ? 'استكمال المحاضرة' : 'Back to Lecture'}
+                            <button className="btn-continue" style={{ background: 'var(--h-bg)', color: 'var(--txt)', border: 'none', padding: '10px 25px', borderRadius: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => router.back()}>
+                                <FaPlayCircle /> {lang === 'ar' ? 'العودة' : 'Back'}
                             </button>
                         </div>
 
                         {hw.questions.map((q: any, i: number) => {
-                            // Mocking correct/wrong states for demo purposes based on question type
                             const isCorrect = q.type !== 'essay'; 
-                            const ansClass = isCorrect ? 'ans-correct' : 'ans-wrong';
-
+                            
                             return (
-                                <div key={q.id} className="review-box" style={{ background: 'var(--card)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '15px', padding: '25px', marginBottom: '20px' }}>
-                                    <h3 style={{ marginBottom: '10px' }}>{lang === 'ar' ? 'س' : 'Q'}{i + 1}: {lang === 'ar' ? q.textAr : q.textEn}</h3>
+                                <div key={q.id} className="review-box" style={{ background: 'var(--bg)', border: '1px solid var(--h-bg)', borderRadius: '15px', padding: '25px', marginBottom: '20px' }}>
+                                    <h3 style={{ marginBottom: '15px', color: 'var(--txt)' }}>
+                                        <span style={{ color: 'var(--p-purple)' }}>{lang === 'ar' ? 'س' : 'Q'}{i + 1}:</span> {lang === 'ar' ? q.textAr : q.textEn}
+                                    </h3>
                                     
-                                    <div className={ansClass} style={{ background: isCorrect ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)', border: `1px solid ${isCorrect ? '#2ecc71' : '#e74c3c'}`, padding: '15px', borderRadius: '10px', marginTop: '15px', fontWeight: 'bold', lineHeight: 1.6 }}>
-                                        <span style={{ background: isCorrect ? '#2ecc71' : '#e74c3c', color: 'white', padding: '3px 8px', borderRadius: '5px', fontSize: '0.8rem' }}>
+                                    <div style={{ background: isCorrect ? 'rgba(46, 204, 113, 0.05)' : 'rgba(231, 76, 60, 0.05)', border: `1px solid ${isCorrect ? 'var(--success)' : 'var(--danger)'}`, padding: '20px', borderRadius: '10px', marginTop: '15px', lineHeight: 1.6 }}>
+                                        <span style={{ display: 'inline-block', background: isCorrect ? 'var(--success)' : 'var(--danger)', color: 'white', padding: '3px 10px', borderRadius: '5px', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '15px' }}>
                                             {isCorrect ? (lang === 'ar' ? `إجابتك صحيحة (${q.score}/${q.score})` : `Correct (${q.score}/${q.score})`) : (lang === 'ar' ? `إجابة غير مكتملة (4/${q.score})` : `Incomplete (4/${q.score})`)}
                                         </span> 
-                                        <br /><br />
-                                        <strong>{lang === 'ar' ? 'إجابتك:' : 'Your Answer:'}</strong> 
-                                        {q.type === 'mcq' ? (answers[q.id] !== undefined ? (lang === 'ar' ? q.optionsAr[answers[q.id]] : q.optionsEn[answers[q.id]]) : '---') : (answers[q.id] || '---')}
-                                        <br /><br />
-                                        <strong>{lang === 'ar' ? 'الإجابة النموذجية:' : 'Model Answer:'}</strong> {lang === 'ar' ? q.reviewAr : q.reviewEn}
+                                        <br />
+                                        <div style={{ color: 'var(--txt)' }}>
+                                            <strong style={{ color: 'var(--p-purple)' }}>{lang === 'ar' ? 'إجابتك:' : 'Your Answer:'}</strong> <br/>
+                                            {q.type === 'mcq' ? (answers[q.id] !== undefined ? (lang === 'ar' ? q.optionsAr[answers[q.id]] : q.optionsEn[answers[q.id]]) : '---') : (answers[q.id] || '---')}
+                                        </div>
+                                        <br />
+                                        <div style={{ color: 'var(--txt)' }}>
+                                            <strong style={{ color: 'var(--success)' }}>{lang === 'ar' ? 'الإجابة النموذجية:' : 'Model Answer:'}</strong> <br/>
+                                            {lang === 'ar' ? q.reviewAr : q.reviewEn}
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -286,11 +294,15 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
             </div>
 
             {/* Toast Notification Element */}
-            <div className={`toast ${toastMsg ? 'show' : ''}`}>
+            <div className={`toast ${toastMsg ? 'show' : ''}`} style={{ 
+                position: 'fixed', bottom: '30px', right: lang === 'ar' ? '30px' : 'auto', left: lang === 'ar' ? 'auto' : '30px', 
+                background: '#2ecc71', color: 'white', padding: '15px 25px', borderRadius: '10px', fontWeight: 'bold', 
+                boxShadow: '0 5px 20px rgba(0,0,0,0.3)', transform: toastMsg ? 'translateY(0)' : 'translateY(100px)', 
+                opacity: toastMsg ? 1 : 0, transition: '0.4s ease', zIndex: 9999, display: 'flex', alignItems: 'center', gap: '10px', pointerEvents: 'none' 
+            }}>
                 <FaCheckCircle /> <span>{toastMsg}</span>
             </div>
-
-            <Footer />
+            
         </main>
     );
 }

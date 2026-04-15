@@ -65,39 +65,44 @@ export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, ter
     };
 
     const handleRegister = () => {
-        // 💡 تشغيل تسجيل الدخول المركزي بدلاً من الـ LocalStorage
+        // تشغيل تسجيل الدخول المركزي
         login(regData.phone);
-        
-        // تشغيل نافذة الترحيب (والتوجيه للوحة التحكم هيتم أوتوماتيك من الصفحة الرئيسية)
+        // تشغيل نافذة الترحيب
         onSuccess();
+    };
+
+    const inputStyle = {
+        width: '100%', padding: '12px 15px', borderRadius: '10px', 
+        border: '2px solid rgba(108,92,231,0.2)', background: 'var(--bg)', 
+        color: 'var(--txt)', outline: 'none', fontSize: '0.95rem', transition: '0.3s'
     };
 
     return (
         <motion.div key="register" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} dir={isAr ? 'rtl' : 'ltr'}>
-            <h2 style={{ marginBottom: '25px', fontWeight: 900, color: 'var(--p-purple)', textAlign: 'center' }}>
+            <h2 style={{ marginBottom: '25px', fontWeight: 900, color: 'var(--txt)', textAlign: 'center' }}>
                 {isAr ? 'طالب جديد' : 'New Student'}
             </h2>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 <div style={{ width: '100%' }}>
-                    <input type="text" id="r-name" className={`form-control ${regErrors.name ? 'invalid' : ''}`} placeholder={isAr ? 'الاسم الرباعي (بالعربي)' : 'Full Name (Arabic)'} value={regData.name} onChange={handleRegChange} style={{ width: '100%' }} />
-                    {regErrors.name && <span className="err-hint" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--danger)', marginTop: '5px' }}>{regErrors.name}</span>}
+                    <input type="text" id="r-name" className={regErrors.name ? 'invalid' : ''} placeholder={isAr ? 'الاسم الرباعي (بالعربي)' : 'Full Name (Arabic)'} value={regData.name} onChange={handleRegChange} style={{ ...inputStyle, border: regErrors.name ? '2px solid #e74c3c' : inputStyle.border }} />
+                    {regErrors.name && <span className="err-hint" style={{ display: 'block', fontSize: '0.8rem', color: '#e74c3c', marginTop: '5px', fontWeight: 'bold' }}>{regErrors.name}</span>}
                 </div>
 
                 <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                     <div style={{ flex: '1 1 calc(50% - 10px)' }}>
-                        <input type="tel" id="r-phone" className={`form-control ${regErrors.phone ? 'invalid' : ''}`} placeholder={isAr ? 'رقم الطالب (واتساب)' : 'Student Phone (WhatsApp)'} value={regData.phone} onChange={handleRegChange} style={{ width: '100%' }} />
-                        {regErrors.phone && <span className="err-hint" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--danger)', marginTop: '5px' }}>{regErrors.phone}</span>}
+                        <input type="tel" id="r-phone" className={regErrors.phone ? 'invalid' : ''} placeholder={isAr ? 'رقم الطالب (واتساب)' : 'Student Phone'} value={regData.phone} onChange={handleRegChange} style={{ ...inputStyle, border: regErrors.phone ? '2px solid #e74c3c' : inputStyle.border }} />
+                        {regErrors.phone && <span className="err-hint" style={{ display: 'block', fontSize: '0.8rem', color: '#e74c3c', marginTop: '5px', fontWeight: 'bold' }}>{regErrors.phone}</span>}
                     </div>
                     <div style={{ flex: '1 1 calc(50% - 10px)' }}>
-                        <input type="tel" id="r-parent" className={`form-control ${regErrors.parent ? 'invalid' : ''}`} placeholder={isAr ? 'رقم ولي الأمر (واتساب)' : 'Parent Phone (WhatsApp)'} value={regData.parent} onChange={handleRegChange} style={{ width: '100%' }} />
-                        {regErrors.parent && <span className="err-hint" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--danger)', marginTop: '5px' }}>{regErrors.parent}</span>}
+                        <input type="tel" id="r-parent" className={regErrors.parent ? 'invalid' : ''} placeholder={isAr ? 'رقم ولي الأمر (واتساب)' : 'Parent Phone'} value={regData.parent} onChange={handleRegChange} style={{ ...inputStyle, border: regErrors.parent ? '2px solid #e74c3c' : inputStyle.border }} />
+                        {regErrors.parent && <span className="err-hint" style={{ display: 'block', fontSize: '0.8rem', color: '#e74c3c', marginTop: '5px', fontWeight: 'bold' }}>{regErrors.parent}</span>}
                     </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                     <div style={{ flex: '1 1 calc(50% - 10px)' }}>
-                        <select id="r-gov" className="form-control" value={regData.gov} onChange={handleRegChange} style={{ width: '100%', cursor: 'pointer' }}>
+                        <select id="r-gov" value={regData.gov} onChange={handleRegChange} style={{ ...inputStyle, cursor: 'pointer' }}>
                             <option value="">{isAr ? 'المحافظة' : 'Governorate'}</option>
                             <option value="Cairo">{isAr ? 'القاهرة' : 'Cairo'}</option>
                             <option value="Giza">{isAr ? 'الجيزة' : 'Giza'}</option>
@@ -105,12 +110,12 @@ export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, ter
                         </select>
                     </div>
                     <div style={{ flex: '1 1 calc(50% - 10px)' }}>
-                        <input type="text" id="r-school" className="form-control" placeholder={isAr ? 'المدرسة' : 'School'} value={regData.school} onChange={handleRegChange} style={{ width: '100%' }} />
+                        <input type="text" id="r-school" placeholder={isAr ? 'المدرسة' : 'School'} value={regData.school} onChange={handleRegChange} style={inputStyle} />
                     </div>
                 </div>
 
                 <div style={{ width: '100%' }}>
-                    <input type="text" id="r-address" className="form-control" placeholder={isAr ? 'العنوان بالتفصيل' : 'Detailed Address'} value={regData.address} onChange={handleRegChange} style={{ width: '100%' }} />
+                    <input type="text" id="r-address" placeholder={isAr ? 'العنوان بالتفصيل' : 'Detailed Address'} value={regData.address} onChange={handleRegChange} style={inputStyle} />
                 </div>
 
                 <div style={{ width: '100%' }}>
@@ -118,36 +123,25 @@ export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, ter
                         <input 
                             type={showPassword ? "text" : "password"} 
                             id="r-pass" 
-                            className={`form-control ${regErrors.pass ? 'invalid' : ''}`} 
+                            className={regErrors.pass ? 'invalid' : ''} 
                             placeholder={isAr ? 'الرقم السري (6 أرقام/حروف على الأقل)' : 'Password (Min 6 chars)'} 
                             value={regData.pass} 
                             onChange={e => { e.target.value = e.target.value.replace(/\s/g, ''); handleRegChange(e); }} 
-                            style={{ width: '100%' }} 
+                            style={{ ...inputStyle, border: regErrors.pass ? '2px solid #e74c3c' : inputStyle.border }} 
                         />
                         <div 
                             onClick={() => setShowPassword(!showPassword)}
-                            style={{
-                                position: 'absolute',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                left: isAr ? '15px' : 'auto',
-                                right: isAr ? 'auto' : '15px',
-                                cursor: 'pointer',
-                                color: 'var(--p-purple)',
-                                fontSize: '1.2rem',
-                                display: 'flex',
-                                alignItems: 'center'
-                            }}
+                            style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: isAr ? '15px' : 'auto', right: isAr ? 'auto' : '15px', cursor: 'pointer', color: 'var(--p-purple)', fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}
                         >
                             {showPassword ? <FaEyeSlash /> : <FaEye />}
                         </div>
                     </div>
-                    {regErrors.pass && <span className="err-hint" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--danger)', marginTop: '5px' }}>{regErrors.pass}</span>}
+                    {regErrors.pass && <span className="err-hint" style={{ display: 'block', fontSize: '0.8rem', color: '#e74c3c', marginTop: '5px', fontWeight: 'bold' }}>{regErrors.pass}</span>}
                 </div>
             </div>
             
-            <div style={{ margin: '20px 0', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input type="checkbox" readOnly checked={termsAccepted} onClick={onShowTerms} style={{ width: '18px', height: '18px', cursor: 'pointer' }} /> 
+            <div style={{ margin: '20px 0', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem', color: 'var(--txt)' }}>
+                <input type="checkbox" readOnly checked={termsAccepted} onClick={onShowTerms} style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--p-purple)' }} /> 
                 <span>
                     {isAr ? 'أوافق على ' : 'I agree to '} 
                     <span onClick={onShowTerms} style={{ color: 'var(--p-purple)', cursor: 'pointer', textDecoration: 'underline' }}>
@@ -156,10 +150,21 @@ export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, ter
                 </span>
             </div>
             
-            <button className="btn-submit" disabled={!isRegValid()} onClick={handleRegister} style={{ width: '100%' }}>
+            <button 
+                className="btn-submit glow-btn" 
+                disabled={!isRegValid()} 
+                onClick={handleRegister} 
+                style={{ 
+                    width: '100%', background: isRegValid() ? 'var(--p-purple)' : 'var(--h-bg)', 
+                    color: isRegValid() ? '#fff' : 'var(--txt-mut)', border: 'none', padding: '15px', 
+                    borderRadius: '12px', fontWeight: 'bold', fontSize: '1.1rem', cursor: isRegValid() ? 'pointer' : 'not-allowed', 
+                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', transition: '0.3s' 
+                }}
+            >
                 {isAr ? 'إنشاء حساب' : 'Create Account'} <FaUserPlus style={{ margin: isAr ? '0 10px 0 0' : '0 0 0 10px' }} />
             </button>
-            <div className="switch-link" style={{ textAlign: 'center', marginTop: '15px' }}>
+
+            <div className="switch-link" style={{ textAlign: 'center', marginTop: '20px', color: 'var(--txt-mut)', fontSize: '0.95rem' }}>
                 {isAr ? 'لديك حساب؟ ' : 'Have an account? '} 
                 <span onClick={onSwitchView} style={{ color: 'var(--p-purple)', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}>{isAr ? 'دخول' : 'Login'}</span>
             </div>

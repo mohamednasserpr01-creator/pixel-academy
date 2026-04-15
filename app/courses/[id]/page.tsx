@@ -1,15 +1,13 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import Navbar from '../../../../components/layout/Navbar'; // تأكد من مسار الناف بار
-import Footer from '../../../../components/layout/Footer'; // تأكد من مسار الفوتر
 
 // استدعاء الخدمات والبيانات المركزية
 import { useSettings } from '../../../../context/SettingsContext';
 import { courseService } from '../../../../services/courseService';
 import { Lecture } from '../../../../types';
 
-// استدعاء أجزاء المحاضرة اللي لسه عاملينها
+// استدعاء أجزاء المحاضرة
 import VideoPlayer from '../../../../components/lecture/VideoPlayer';
 import LectureSidebar from '../../../../components/lecture/LectureSidebar';
 
@@ -47,30 +45,44 @@ export default function LecturePage() {
         fetchLectureData();
     }, [courseId, lectureId]);
 
-    if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>جاري التحميل...</div>;
-    if (!currentLecture) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>المحاضرة غير موجودة</div>;
+    // 💡 شاشة تحميل احترافية (Spinner)
+    if (loading) return (
+        <main className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <div style={{ width: '50px', height: '50px', border: '4px solid rgba(108,92,231,0.2)', borderTopColor: 'var(--p-purple)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+            <style dangerouslySetInnerHTML={{__html: `@keyframes spin { 100% { transform: rotate(360deg); } }`}} />
+        </main>
+    );
+
+    // 💡 رسالة خطأ شيك لو المحاضرة مش موجودة
+    if (!currentLecture) return (
+        <main className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <h2 style={{ color: 'var(--txt-mut)' }}>{lang === 'ar' ? 'المحاضرة غير موجودة أو تم حذفها' : 'Lecture not found'}</h2>
+        </main>
+    );
 
     return (
-        <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-            <Navbar />
+        // 💡 الكلاس الموحد بيحمي الصفحة كلها من التداخل
+        <main className="page-wrapper">
             
-            <div className="lecture-layout" style={{ flex: 1, padding: '100px 5% 50px', display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '30px', maxWidth: '1600px', margin: '0 auto', width: '100%' }}>
+            <div className="lecture-layout" style={{ display: 'flex', gap: '30px', width: '100%', alignItems: 'flex-start' }}>
                 
-                {/* الجزء اليمين (أو الشمال حسب اللغة): مساحة الفيديو ومعلومات المحاضرة */}
-                <section className="main-content">
+                {/* الجزء الأول: مساحة الفيديو ومعلومات المحاضرة (بياخد 3 أضعاف المساحة) */}
+                <section className="main-content" style={{ flex: '3', minWidth: 0 }}>
                     <VideoPlayer videoUrl={currentLecture.videoUrl} />
                     
-                    <div className="lecture-info" style={{ marginTop: '20px', background: 'var(--card)', padding: '25px', borderRadius: '15px' }}>
-                        <h1 style={{ marginBottom: '15px', color: 'var(--p-purple)' }}>
+                    <div className="lecture-info" style={{ marginTop: '20px', background: 'var(--card)', padding: '25px', borderRadius: '15px', border: '1px solid rgba(108,92,231,0.1)', boxShadow: '0 5px 20px rgba(0,0,0,0.05)' }}>
+                        <h1 style={{ marginBottom: '15px', color: 'var(--p-purple)', fontSize: '1.8rem', fontWeight: 900 }}>
                             {lang === 'ar' ? currentLecture.titleAr : currentLecture.titleEn}
                         </h1>
-                        <p style={{ color: 'var(--txt-mut)' }}>مدة المحاضرة: {currentLecture.duration}</p>
-                        {/* هنا ممكن تحط Component تاني للـ Chat أو المرفقات (LectureChat / LectureInfo) */}
+                        <div style={{ display: 'flex', gap: '20px', color: 'var(--txt-mut)', fontWeight: 'bold' }}>
+                            <span>{lang === 'ar' ? 'مدة المحاضرة:' : 'Duration:'} {currentLecture.duration}</span>
+                            {/* تقدر تضيف هنا أي معلومات تانية زي عدد المشاهدات أو تاريخ النشر */}
+                        </div>
                     </div>
                 </section>
 
-                {/* الجزء التاني: القائمة الجانبية */}
-                <section className="sidebar-content">
+                {/* الجزء التاني: القائمة الجانبية (بياخد ضعف واحد) */}
+                <section className="sidebar-content" style={{ flex: '1', minWidth: '300px', position: 'sticky', top: '100px' }}>
                     <LectureSidebar 
                         lectures={lectures} 
                         currentLectureId={lectureId} 
@@ -80,15 +92,15 @@ export default function LecturePage() {
                 </section>
             </div>
 
-            <Footer />
-
-            {/* ستايل الموبايل عشان الشاشة متضربش */}
-            <style jsx>{`
+            {/* 💡 الحل الجذري للموبايل بدون استخدام jsx */}
+            <style dangerouslySetInnerHTML={{__html: `
                 @media (max-width: 992px) {
-                    .lecture-layout { grid-template-columns: 1fr !important; padding-top: 80px !important; }
-                    .sidebar-content { order: 2; } /* القائمة تنزل تحت الفيديو في الموبايل */
+                    .lecture-layout { flex-direction: column !important; }
+                    .main-content { width: 100% !important; flex: auto !important; }
+                    .sidebar-content { width: 100% !important; flex: auto !important; position: static !important; margin-top: 20px; }
                 }
-            `}</style>
+            `}} />
+            
         </main>
     );
 }

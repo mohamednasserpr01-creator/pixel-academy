@@ -1,44 +1,51 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import Navbar from '../../components/layout/Navbar';
-import Footer from '../../components/layout/Footer';
+import React, { useState } from 'react';
+import { useSettings } from '../../context/SettingsContext';
+
 import { 
     FaHandsHelping, FaLock, FaUserPlus, FaUserTie, FaUserNurse, 
-    FaCalendarDay, FaCalendarTimes, FaCalendarCheck, FaPhoneVolume, 
+    FaCalendarAlt, FaCalendarTimes, FaCalendarCheck, FaPhoneVolume, 
     FaCheck, FaTimesCircle, FaCheckCircle, FaExclamationCircle 
 } from 'react-icons/fa';
 import { FaWhatsapp } from 'react-icons/fa6';
 
 // =========================================================================
-// 💡 MOCK DATA: الهيكل الجديد يدعم عدد المقاعد المتبقية
+// 💡 MOCK DATA: مطابقة للتصميم ومجهزة لاستقبال الـ API
 // =========================================================================
 const initialScheduleData = {
     male: [
         { 
             day: "السبت", date: "21 مارس 2026", 
             slots: [
-                { time: "10:00 ص", isBooked: false, remaining: 3 },
-                { time: "10:30 ص", isBooked: false, remaining: 1 }, // هيظهر بلون أحمر للتحفيز
-                { time: "11:00 ص", isBooked: false, remaining: 2 },
-                { time: "11:30 ص", isBooked: true, remaining: 0 },
-                { time: "12:00 م", isBooked: false, remaining: 4 },
-                { time: "12:30 م", isBooked: false, remaining: 1 },
-                { time: "02:00 م", isBooked: true, remaining: 0 },
+                { time: "10:00 ص", isBooked: false },
+                { time: "10:30 ص", isBooked: false },
+                { time: "11:00 ص", isBooked: false },
+                { time: "11:30 ص", isBooked: true }, 
+                { time: "12:00 م", isBooked: false },
+                { time: "12:30 م", isBooked: false },
+                { time: "01:00 م", isBooked: true }, 
+                { time: "02:00 م", isBooked: true }, 
+                { time: "03:00 م", isBooked: false },
+                { time: "04:00 م", isBooked: false },
+                { time: "05:00 م", isBooked: false },
+                { time: "06:00 م", isBooked: true }, 
             ] 
         },
         { 
             day: "الإثنين", date: "23 مارس 2026", 
             slots: [
-                { time: "05:00 م", isBooked: false, remaining: 2 },
-                { time: "07:00 م", isBooked: false, remaining: 5 },
-                { time: "08:30 م", isBooked: false, remaining: 1 },
+                { time: "05:00 م", isBooked: false },
+                { time: "07:00 م", isBooked: false },
+                { time: "08:30 م", isBooked: false },
+                { time: "09:00 م", isBooked: false },
             ] 
         },
         { 
             day: "الأربعاء", date: "25 مارس 2026", 
             slots: [
-                { time: "01:00 م", isBooked: true, remaining: 0 },
-                { time: "03:00 م", isBooked: false, remaining: 2 }
+                { time: "01:00 م", isBooked: true },
+                { time: "03:00 م", isBooked: false },
+                { time: "09:00 م", isBooked: false },
             ] 
         }
     ],
@@ -46,32 +53,17 @@ const initialScheduleData = {
 };
 
 export default function SupportRoomPage() {
-    const [mounted, setMounted] = useState(false);
-    const [theme, setTheme] = useState('dark');
-    const [lang, setLang] = useState('ar');
+    const { lang } = useSettings();
 
-    const [isLoggedIn, setIsLoggedIn] = useState(false); 
+    // 💡 للحظة الحالية، بنفترض إن الطالب مسجل دخول عشان نعرض التصميم
+    const [isLoggedIn, setIsLoggedIn] = useState(true); 
     const [specType, setSpecType] = useState<'male' | 'female'>('male');
     const [scheduleData, setScheduleData] = useState(initialScheduleData);
     const [hasBookedThisWeek, setHasBookedThisWeek] = useState(false); 
     
     const [showModal, setShowModal] = useState(false);
     const [pendingBooking, setPendingBooking] = useState<{ day: string, date: string, time: string } | null>(null);
-    
-    // 💡 تطوير الـ Toast ليدعم الخطأ والنجاح
     const [toastData, setToastData] = useState<{ msg: string, type: 'success' | 'error' } | null>(null);
-
-    useEffect(() => {
-        setMounted(true);
-        const savedTheme = localStorage.getItem('pixel_theme') || 'dark';
-        const savedLang = localStorage.getItem('pixel_lang') || 'ar';
-        setTheme(savedTheme); setLang(savedLang);
-        if (savedTheme === 'light') document.body.classList.add('light-mode');
-        document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
-    }, []);
-
-    const toggleMode = () => { setTheme(theme === 'dark' ? 'light' : 'dark'); if(theme === 'dark') document.body.classList.add('light-mode'); else document.body.classList.remove('light-mode'); localStorage.setItem('pixel_theme', theme === 'dark' ? 'light' : 'dark'); };
-    const toggleLang = () => { const newLang = lang === 'ar' ? 'en' : 'ar'; setLang(newLang); document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr'; localStorage.setItem('pixel_lang', newLang); };
 
     const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
         setToastData({ msg, type });
@@ -80,7 +72,6 @@ export default function SupportRoomPage() {
 
     const handleSlotClick = (day: string, date: string, time: string) => {
         if (hasBookedThisWeek) {
-            // 💡 استبدال الـ alert بـ Error Toast
             showToast(lang === 'ar' ? "عذراً! لقد حجزت جلسة بالفعل هذا الأسبوع." : "Sorry! You already booked a session this week.", 'error');
             return;
         }
@@ -97,11 +88,7 @@ export default function SupportRoomPage() {
             if (dayData) {
                 const slotIndex = dayData.slots.findIndex(s => s.time === pendingBooking.time);
                 if (slotIndex !== -1) {
-                    // 💡 تقليل عدد المقاعد برمجياً
-                    dayData.slots[slotIndex].remaining -= 1;
-                    if (dayData.slots[slotIndex].remaining <= 0) {
-                        dayData.slots[slotIndex].isBooked = true;
-                    }
+                    dayData.slots[slotIndex].isBooked = true;
                 }
             }
             return newData;
@@ -112,95 +99,117 @@ export default function SupportRoomPage() {
         showToast(lang === 'ar' ? "تم تأكيد الحجز بنجاح!" : "Booking confirmed successfully!", 'success');
     };
 
-    if (!mounted) return null;
-
     const currentData = scheduleData[specType];
 
     return (
-        <main style={{ position: 'relative', width: '100%', minHeight: '100vh', overflowX: 'hidden', paddingTop: '100px' }}>
-            <Navbar lang={lang} theme={theme} toggleLang={toggleLang} toggleMode={toggleMode} />
+        <main className="page-wrapper">
 
-            <div className="support-hero">
-                <h1><FaHandsHelping style={{ color: '#0984e3' }} /> {lang === 'ar' ? 'الدعم النفسي والأكاديمي' : 'Psychological & Academic Support'}</h1>
-                <p>{lang === 'ar' ? 'نحن هنا لمساعدتك على تجاوز ضغوط الدراسة وتوجيهك نفسياً وأكاديمياً لتحقيق أفضل نسخة من نفسك.' : 'We are here to help you overcome study pressures and guide you to become the best version of yourself.'}</p>
+            <div className="support-hero" style={{ textAlign: 'center', marginBottom: '40px', marginTop: '20px' }}>
+                <h1 style={{ color: '#0984e3', fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: '900', marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+                    {lang === 'ar' ? 'الدعم النفسي والأكاديمي' : 'Psychological & Academic Support'} <FaHandsHelping />
+                </h1>
+                <p style={{ color: 'var(--txt)', maxWidth: '700px', margin: '0 auto', fontSize: '1.1rem', lineHeight: '1.8', fontWeight: 'bold' }}>
+                    {lang === 'ar' ? 'نحن هنا لمساعدتك على تجاوز ضغوط الدراسة وتوجيهك نفسياً وأكاديمياً لتحقيق أفضل نسخة من نفسك.' : 'We are here to help you overcome study pressures and guide you to become the best version of yourself.'}
+                </p>
             </div>
 
             <div className="support-container">
                 
                 {/* ======== STATE 1: LOCKED ======== */}
                 {!isLoggedIn && (
-                    <div className="locked-state">
-                        <FaLock className="locked-icon" />
-                        <h2>{lang === 'ar' ? 'المواعيد غير متاحة للزوار' : 'Appointments are not available for visitors'}</h2>
-                        <p>{lang === 'ar' ? 'لحماية خصوصيتك ولتتمكن من حجز جلسة إرشادية، يرجى تسجيل الدخول.' : 'To protect your privacy and book a session, please log in.'}</p>
-                        <button className="btn-register-now" onClick={() => setIsLoggedIn(true)}>
+                    <div className="locked-state" style={{ background: 'var(--card)', padding: '50px', borderRadius: '20px', textAlign: 'center', border: '1px solid rgba(108,92,231,0.1)' }}>
+                        <FaLock className="locked-icon" style={{ fontSize: '4rem', color: '#7f8c8d', marginBottom: '20px' }} />
+                        <h2 style={{ marginBottom: '15px', color: 'var(--txt)' }}>{lang === 'ar' ? 'المواعيد غير متاحة للزوار' : 'Appointments are not available for visitors'}</h2>
+                        <p style={{ color: 'var(--txt-mut)', marginBottom: '30px' }}>{lang === 'ar' ? 'لحماية خصوصيتك ولتتمكن من حجز جلسة إرشادية، يرجى تسجيل الدخول.' : 'To protect your privacy and book a session, please log in.'}</p>
+                        <button className="btn-register-now glow-btn" onClick={() => setIsLoggedIn(true)} style={{ padding: '12px 30px', display: 'inline-flex', alignItems: 'center', gap: '10px', fontSize: '1.1rem' }}>
                             <FaUserPlus /> {lang === 'ar' ? 'سجل الآن لظهور المواعيد' : 'Login to view schedule'}
                         </button>
                     </div>
                 )}
 
-                {/* ======== STATE 2: BOOKING ======== */}
+                {/* ======== STATE 2: BOOKING (مطابق للتصميم الجديد) ======== */}
                 {isLoggedIn && (
                     <div className="booking-state">
-                        <div className="specialist-tabs">
-                            <button className={`tab-btn ${specType === 'male' ? 'active' : ''}`} onClick={() => setSpecType('male')}>
-                                <FaUserTie /> {lang === 'ar' ? 'حجز مع متخصص' : 'Male Specialist'}
-                            </button>
-                            <button className={`tab-btn ${specType === 'female' ? 'active' : ''}`} onClick={() => setSpecType('female')}>
+                        
+                        {/* 💡 أزرار المتخصصين (Tabs) */}
+                        <div className="specialist-tabs" style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '40px' }}>
+                            <button 
+                                onClick={() => setSpecType('female')} 
+                                style={{ 
+                                    padding: '12px 30px', borderRadius: '10px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', transition: '0.3s', display: 'flex', alignItems: 'center', gap: '10px',
+                                    border: specType === 'female' ? 'none' : '1px solid rgba(255,255,255,0.2)', 
+                                    background: specType === 'female' ? '#0984e3' : 'transparent', 
+                                    color: '#fff',
+                                    boxShadow: specType === 'female' ? '0 0 15px rgba(9,132,227,0.5)' : 'none'
+                                }}>
                                 <FaUserNurse /> {lang === 'ar' ? 'حجز مع متخصصة' : 'Female Specialist'}
+                            </button>
+                            <button 
+                                onClick={() => setSpecType('male')} 
+                                style={{ 
+                                    padding: '12px 30px', borderRadius: '10px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', transition: '0.3s', display: 'flex', alignItems: 'center', gap: '10px',
+                                    border: specType === 'male' ? 'none' : '1px solid rgba(255,255,255,0.2)', 
+                                    background: specType === 'male' ? '#0984e3' : 'transparent', 
+                                    color: '#fff',
+                                    boxShadow: specType === 'male' ? '0 0 15px rgba(9,132,227,0.5)' : 'none'
+                                }}>
+                                <FaUserTie /> {lang === 'ar' ? 'حجز مع متخصص' : 'Male Specialist'}
                             </button>
                         </div>
                         
-                        <div className="schedule-grid">
+                        {/* 💡 شبكة الأيام (Cards) */}
+                        <div className="schedule-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'center' }}>
                             {currentData.length === 0 ? (
-                                <div className="empty-state">
-                                    <FaCalendarTimes style={{ fontSize: '4rem', color: 'var(--locked)', marginBottom: '20px' }} />
-                                    <h3>{lang === 'ar' ? 'لا تتوفر مواعيد حالياً' : 'No appointments available'}</h3>
-                                    <p>{lang === 'ar' ? 'برجاء التواصل مع الدعم الفني في حالة وجود مشكلة تقنية.' : 'Please contact support if there is a technical issue.'}</p>
-                                    <a href="https://wa.me/201221466441" target="_blank" rel="noreferrer" className="btn-whatsapp" style={{ textDecoration: 'none' }}>
-                                        <FaWhatsapp /> {lang === 'ar' ? 'تواصل مع الدعم الفني' : 'Contact Support'}
-                                    </a>
+                                <div className="empty-state" style={{ background: 'var(--card)', padding: '50px', borderRadius: '20px', textAlign: 'center', width: '100%' }}>
+                                    <FaCalendarTimes style={{ fontSize: '4rem', color: 'var(--txt-mut)', marginBottom: '20px' }} />
+                                    <h3 style={{ marginBottom: '15px', color: 'var(--txt)' }}>{lang === 'ar' ? 'لا تتوفر مواعيد حالياً' : 'No appointments available'}</h3>
+                                    <p style={{ color: 'var(--txt-mut)' }}>{lang === 'ar' ? 'يرجى المحاولة لاحقاً أو اختيار متخصص آخر.' : 'Please try again later.'}</p>
                                 </div>
                             ) : (
                                 currentData.map((dayObj, idx) => (
-                                    <div key={idx} className="day-card">
-                                        <div className="day-header">
-                                            <div className="day-icon"><FaCalendarDay /></div>
-                                            <div>
-                                                <div className="day-title">{dayObj.day}</div>
-                                                <div className="day-date">{dayObj.date}</div>
+                                    <div key={idx} className="day-card" style={{ background: 'var(--card)', borderRadius: '15px', padding: '25px', width: '100%', maxWidth: '350px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
+                                        
+                                        <div className="day-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed rgba(255,255,255,0.15)', paddingBottom: '15px', marginBottom: '20px' }}>
+                                            <div style={{ textAlign: lang === 'ar' ? 'right' : 'left' }}>
+                                                <div style={{ fontWeight: '900', fontSize: '1.4rem', color: '#fff', marginBottom: '5px' }}>{dayObj.day}</div>
+                                                <div style={{ color: 'var(--txt-mut)', fontSize: '0.9rem', fontWeight: 'bold' }}>{dayObj.date}</div>
+                                            </div>
+                                            <div style={{ background: 'rgba(9, 132, 227, 0.1)', color: '#0984e3', width: '45px', height: '45px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+                                                <FaCalendarAlt />
                                             </div>
                                         </div>
-                                        <div className="slots-container">
+
+                                        {/* 💡 شبكة المواعيد (2 أعمدة) */}
+                                        <div className="slots-container" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                             {dayObj.slots.map((slot, sIdx) => {
                                                 return (
                                                     <button 
                                                         key={sIdx} 
-                                                        className={`time-slot ${slot.isBooked ? 'booked' : ''}`} 
                                                         disabled={slot.isBooked}
                                                         onClick={() => handleSlotClick(dayObj.day, dayObj.date, slot.time)}
-                                                        // 💡 تنسيق لدعم إظهار المقاعد المتبقية تحت الوقت
-                                                        style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', justifyContent: 'center' }}
+                                                        style={{ 
+                                                            padding: '12px 10px', 
+                                                            borderRadius: '8px', 
+                                                            fontWeight: 'bold',
+                                                            fontSize: '1rem',
+                                                            fontFamily: 'monospace',
+                                                            textAlign: 'center',
+                                                            cursor: slot.isBooked ? 'not-allowed' : 'pointer',
+                                                            transition: '0.3s',
+                                                            background: 'transparent',
+                                                            // 💡 ستايل المتاح مقابل المحجوز
+                                                            border: slot.isBooked ? '1px solid rgba(231,76,60,0.3)' : '1px solid rgba(255,255,255,0.1)',
+                                                            color: slot.isBooked ? '#e74c3c' : '#fff',
+                                                            textDecoration: slot.isBooked ? 'line-through' : 'none',
+                                                            opacity: slot.isBooked ? 0.6 : 1
+                                                        }}
                                                     >
-                                                        <span>{slot.time}</span>
-                                                        
-                                                        {/* إظهار المقاعد لو مش محجوز بالكامل */}
-                                                        {!slot.isBooked && (
-                                                            <span style={{ fontSize: '0.75rem', opacity: slot.remaining === 1 ? 1 : 0.8, color: slot.remaining === 1 ? '#ff7675' : 'inherit' }}>
-                                                                {lang === 'ar' ? `(${slot.remaining} أماكن)` : `(${slot.remaining} seats)`}
-                                                            </span>
-                                                        )}
-                                                        
-                                                        {/* إظهار كلمة محجوز لو خلصت المقاعد */}
-                                                        {slot.isBooked && (
-                                                            <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                                                                {lang === 'ar' ? '(محجوز)' : '(Booked)'}
-                                                            </span>
-                                                        )}
+                                                        {slot.time}
                                                     </button>
                                                 );
                                             })}
                                         </div>
+
                                     </div>
                                 ))
                             )}
@@ -223,7 +232,7 @@ export default function SupportRoomPage() {
                             <h2 style={{ color: 'var(--txt)', fontWeight: 900, fontSize: '1.5rem' }}>{lang === 'ar' ? 'تأكيد حجز الجلسة' : 'Confirm Booking'}</h2>
                         </div>
 
-                        <div style={{ background: 'rgba(128,128,128,0.1)', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: '1px solid rgba(128,128,128,0.2)' }}>
+                        <div style={{ background: 'var(--h-bg)', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: '1px solid rgba(128,128,128,0.1)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontWeight: 'bold', fontSize: '1.1rem', borderBottom: '1px dashed rgba(128,128,128,0.3)', paddingBottom: '10px', color: 'var(--txt)' }}>
                                 <span>{lang === 'ar' ? 'النوع:' : 'Specialist:'}</span>
                                 <span style={{ color: '#0984e3' }}>{specType === 'male' ? (lang === 'ar' ? 'متخصص (دعم نفسي)' : 'Male Specialist') : (lang === 'ar' ? 'متخصصة (دعم نفسي)' : 'Female Specialist')}</span>
@@ -256,7 +265,7 @@ export default function SupportRoomPage() {
                 </div>
             )}
 
-            {/* 💡 Toast Notification with Dynamic Colors */}
+            {/* 💡 Toast Notification */}
             <div className={`toast ${toastData ? 'show' : ''}`} style={{ 
                 position: 'fixed', bottom: '30px', 
                 right: lang === 'ar' ? '30px' : 'auto', 
@@ -272,7 +281,6 @@ export default function SupportRoomPage() {
                 <span>{toastData?.msg}</span>
             </div>
 
-            <Footer />
         </main>
     );
 }

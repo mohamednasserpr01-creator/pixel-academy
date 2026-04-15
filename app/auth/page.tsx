@@ -1,100 +1,95 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // 💡 استدعاء الراوتر للتوجيه
-import { FaMoon, FaSun, FaHome, FaGlobe } from 'react-icons/fa';
+import { useRouter } from 'next/navigation'; 
 import { AnimatePresence } from 'framer-motion';
 
-import AuthHero from '../../components/auth/AuthHero';
 import LoginForm from '../../components/auth/LoginForm';
 import RegisterForm from '../../components/auth/RegisterForm';
 import WelcomeModal from '../../components/auth/WelcomeModal';
 import TermsModal from '../../components/auth/TermsModal';
 
-// 💡 استدعاء هوك تسجيل الدخول
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 
 export default function AuthPage() {
     const [isLoginView, setIsLoginView] = useState(true);
-    const [theme, setTheme] = useState('dark');
-    const [lang, setLang] = useState<'ar' | 'en'>('ar'); 
     const [showTerms, setShowTerms] = useState(false);
     const [showWelcome, setShowWelcome] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
 
-    // 💡 استخدام الراوتر والـ Context
     const router = useRouter();
     const { isLoggedIn } = useAuth();
+    const { lang } = useSettings();
 
-    // 💡 توجيه الطالب للوحة التحكم فوراً لو كان مسجل دخول
     useEffect(() => {
         if (isLoggedIn) {
             router.push('/dashboard');
         }
     }, [isLoggedIn, router]);
 
-    useEffect(() => {
-        const savedTheme = localStorage.getItem('pixel_theme') || 'dark';
-        setTheme(savedTheme);
-        if (savedTheme === 'light') document.body.classList.add('light-mode');
-    }, []);
-
-    const toggleTheme = () => {
-        const newTheme = theme === 'dark' ? 'light' : 'dark';
-        setTheme(newTheme);
-        localStorage.setItem('pixel_theme', newTheme);
-        document.body.classList.toggle('light-mode');
-    };
-
-    const toggleLang = () => {
-        setLang(lang === 'ar' ? 'en' : 'ar');
-    };
-
-    // 💡 لو الطالب مسجل، منرسمش الفورم ونستنى التوجيه يخلص عشان مفيش حاجة تـ Flash
     if (isLoggedIn) return null;
 
     return (
-        <div className="auth-wrapper" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-            <AuthHero />
-
-            <div className="auth-form-side">
-                <div className="auth-header">
-                    <div style={{ display: 'flex', gap: '15px' }}>
-                        <button onClick={toggleTheme} className="icon-btn" style={{ color: 'var(--p-purple)', fontSize: '1.5rem' }}>
-                            {theme === 'dark' ? <FaSun /> : <FaMoon />}
-                        </button>
-                        <button onClick={toggleLang} className="icon-btn" style={{ color: 'var(--p-purple)', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                            <FaGlobe /> <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{lang === 'ar' ? 'EN' : 'AR'}</span>
-                        </button>
+        // 💡 شيلنا كلاس page-wrapper عشان نتحكم إحنا في المقاسات 100% ونلغي الـ Padding اللي كان بيبعد الفوتر
+        <main style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingTop: '70px', width: '100%', margin: 0, paddingBottom: 0 }}>
+            
+            {/* 💡 خلينا الـ Container ياخد الـ flex: 1 عشان يطرد الفوتر لتحت خالص */}
+            <div className="auth-split-layout" style={{ display: 'flex', flexWrap: 'wrap', flex: 1, width: '100%' }}>
+                
+                {/* ======== 1. قسم الصورة (على اليمين) ======== */}
+                <div className="auth-hero-section" style={{ 
+                    flex: '1 1 50%', 
+                    position: 'relative', 
+                    display: 'flex', 
+                    overflow: 'hidden',
+                    background: 'url("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1000") center/cover no-repeat',
+                }}>
+                    {/* 💡 درجة اللبني والشفافية اتظبطت زي صورتك بالظبط (0.4 شفافية) */}
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom right, rgba(9, 132, 227, 0.4), rgba(108, 92, 231, 0.45))', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff', textAlign: 'center', padding: '40px' }}>
+                        <h1 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '20px', textShadow: '0 5px 15px rgba(0,0,0,0.3)' }}>
+                            {lang === 'ar' ? 'مرحباً بك في بيكسل 🚀' : 'Welcome to Pixel 🚀'}
+                        </h1>
+                        <p style={{ fontSize: '1.2rem', fontWeight: 'bold', maxWidth: '80%', lineHeight: '1.8' }}>
+                            {lang === 'ar' ? 'أكاديمية بيكسل.. بوابتك للتعليم التفاعلي الذكي وتجربة دراسية لا تُنسى.' : 'Pixel Academy.. Your gateway to smart interactive education and an unforgettable study experience.'}
+                        </p>
                     </div>
-                    <Link href="/" className="icon-btn" style={{ color: 'var(--p-purple)', fontSize: '1.5rem' }}>
-                        <FaHome />
-                    </Link>
                 </div>
 
-                <div className="auth-box">
-                    <AnimatePresence mode="wait">
-                        {isLoginView ? (
-                            <LoginForm onSwitchView={() => setIsLoginView(false)} />
-                        ) : (
-                            <RegisterForm 
-                                onSwitchView={() => setIsLoginView(true)} 
-                                onSuccess={() => setShowWelcome(true)}
-                                onShowTerms={() => setShowTerms(true)}
-                                termsAccepted={termsAccepted}
-                                lang={lang} 
-                            />
-                        )}
-                    </AnimatePresence>
+                {/* ======== 2. قسم الفورم (على الشمال) ======== */}
+                <div className="auth-form-section" style={{ flex: '1 1 50%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '40px 5%', background: 'var(--bg)' }}>
+                    
+                    {/* صندوق الدخول أو التسجيل */}
+                    <div className="auth-box" style={{ width: '100%', maxWidth: '450px', background: 'var(--card)', padding: '40px', borderRadius: '20px', border: '1px solid rgba(108,92,231,0.1)', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}>
+                        <AnimatePresence mode="wait">
+                            {isLoginView ? (
+                                <LoginForm onSwitchView={() => setIsLoginView(false)} />
+                            ) : (
+                                <RegisterForm 
+                                    onSwitchView={() => setIsLoginView(true)} 
+                                    onSuccess={() => setShowWelcome(true)}
+                                    onShowTerms={() => setShowTerms(true)}
+                                    termsAccepted={termsAccepted}
+                                    lang={lang} 
+                                />
+                            )}
+                        </AnimatePresence>
+                    </div>
+
                 </div>
 
-                <footer className="auth-footer">
-                    <p>© {new Date().getFullYear()} بيكسل أكاديمي - جميع الحقوق محفوظة</p>
-                </footer>
+                {showTerms && <TermsModal onAccept={() => { setShowTerms(false); setTermsAccepted(true); }} onClose={() => setShowTerms(false)} lang={lang} />}
+                {showWelcome && <WelcomeModal />}
+                
             </div>
 
-            {showTerms && <TermsModal onAccept={() => { setShowTerms(false); setTermsAccepted(true); }} onClose={() => setShowTerms(false)} lang={lang} />}
-            {showWelcome && <WelcomeModal />}
-        </div>
+            {/* ستايل الموبايل */}
+            <style dangerouslySetInnerHTML={{__html: `
+                @media (max-width: 992px) {
+                    .auth-split-layout { flex-direction: column; }
+                    .auth-hero-section { display: none !important; }
+                    .auth-form-section { padding-top: 50px !important; flex: 1 1 100% !important; }
+                }
+            `}} />
+        </main>
     );
 }
