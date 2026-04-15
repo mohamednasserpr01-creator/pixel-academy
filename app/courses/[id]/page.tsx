@@ -1,106 +1,82 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import React, { use } from 'react';
+import Link from 'next/link';
+import { FaPlayCircle, FaShoppingCart, FaStar, FaChalkboardTeacher } from 'react-icons/fa';
 
-// استدعاء الخدمات والبيانات المركزية
-import { useSettings } from '../../../../context/SettingsContext';
-import { courseService } from '../../../../services/courseService';
-import { Lecture } from '../../../../types';
+// 💡 استدعاء الإعدادات بمسار صحيح (3 مستويات فقط مش 5)
+import { useSettings } from '../../../context/SettingsContext';
 
-// استدعاء أجزاء المحاضرة
-import VideoPlayer from '../../../../components/lecture/VideoPlayer';
-import LectureSidebar from '../../../../components/lecture/LectureSidebar';
-
-export default function LecturePage() {
-    const params = useParams();
-    const courseId = params.id as string;
-    const lectureId = params.lectureId as string;
-    
+export default function CourseDetails({ params }: { params: Promise<{ id: string }> }) {
+    // فك الـ Params للكورس فقط (مفيش هنا lectureId)
+    const resolvedParams = use(params);
+    const courseId = resolvedParams.id;
     const { lang } = useSettings();
-    
-    // حالة البيانات
-    const [lectures, setLectures] = useState<Lecture[]>([]);
-    const [currentLecture, setCurrentLecture] = useState<Lecture | null>(null);
-    const [loading, setLoading] = useState(true);
 
-    // سحب البيانات من الـ Service أول ما الصفحة تفتح
-    useEffect(() => {
-        const fetchLectureData = async () => {
-            try {
-                // هنجيب كل محاضرات الكورس ده عشان القائمة الجانبية
-                const courseLectures = await courseService.getCourseLectures(courseId);
-                setLectures(courseLectures);
-                
-                // هنفلتر عشان نجيب المحاضرة اللي الطالب واقف عليها دلوقتي
-                const activeLecture = courseLectures.find(lec => lec.id === lectureId);
-                if (activeLecture) setCurrentLecture(activeLecture);
-                
-            } catch (error) {
-                console.error("خطأ في جلب المحاضرة:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchLectureData();
-    }, [courseId, lectureId]);
-
-    // 💡 شاشة تحميل احترافية (Spinner)
-    if (loading) return (
-        <main className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-            <div style={{ width: '50px', height: '50px', border: '4px solid rgba(108,92,231,0.2)', borderTopColor: 'var(--p-purple)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-            <style dangerouslySetInnerHTML={{__html: `@keyframes spin { 100% { transform: rotate(360deg); } }`}} />
-        </main>
-    );
-
-    // 💡 رسالة خطأ شيك لو المحاضرة مش موجودة
-    if (!currentLecture) return (
-        <main className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-            <h2 style={{ color: 'var(--txt-mut)' }}>{lang === 'ar' ? 'المحاضرة غير موجودة أو تم حذفها' : 'Lecture not found'}</h2>
-        </main>
-    );
+    // 💡 داتا محاكية للكورس (لحد ما نربطها بالـ courseService بتاعك)
+    const course = {
+        id: courseId,
+        titleAr: "كورس الفيزياء الشامل - ثانوية عامة",
+        titleEn: "Comprehensive Physics Course - High School",
+        descAr: "شرح مفصل ومبسط لمنهج الفيزياء بالكامل مع حل آلاف الأسئلة والتدريبات، ومتابعة دورية وامتحانات مستمرة لضمان تفوقك.",
+        descEn: "Detailed and simplified explanation of the entire physics curriculum with thousands of questions, periodic follow-ups, and continuous exams.",
+        price: 500,
+        level: lang === 'ar' ? 'الصف الثالث الثانوي' : 'Grade 12',
+        instructor: lang === 'ar' ? 'أ. أحمد الفيزيائي' : 'Mr. Ahmed',
+        img: "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?q=80&w=1000&auto=format&fit=crop"
+    };
 
     return (
-        // 💡 الكلاس الموحد بيحمي الصفحة كلها من التداخل
-        <main className="page-wrapper">
-            
-            <div className="lecture-layout" style={{ display: 'flex', gap: '30px', width: '100%', alignItems: 'flex-start' }}>
+        <main className="page-wrapper" style={{ paddingTop: '80px', paddingBottom: '80px' }}>
+            <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', gap: '40px', flexWrap: 'wrap', alignItems: 'center' }}>
                 
-                {/* الجزء الأول: مساحة الفيديو ومعلومات المحاضرة (بياخد 3 أضعاف المساحة) */}
-                <section className="main-content" style={{ flex: '3', minWidth: 0 }}>
-                    <VideoPlayer videoUrl={currentLecture.videoUrl} />
+                {/* معلومات الكورس (يمين) */}
+                <div style={{ flex: '1 1 500px' }}>
+                    <div style={{ display: 'inline-block', background: 'rgba(108,92,231,0.1)', color: 'var(--p-purple)', padding: '8px 15px', borderRadius: '50px', fontWeight: 'bold', marginBottom: '20px' }}>
+                        <FaStar style={{ color: '#f1c40f', marginRight: '5px' }} /> {course.level}
+                    </div>
+                    <h1 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--txt)', marginBottom: '20px', lineHeight: 1.4 }}>
+                        {lang === 'ar' ? course.titleAr : course.titleEn}
+                    </h1>
+                    <p style={{ fontSize: '1.1rem', color: 'var(--txt-mut)', lineHeight: 1.8, marginBottom: '30px' }}>
+                        {lang === 'ar' ? course.descAr : course.descEn}
+                    </p>
                     
-                    <div className="lecture-info" style={{ marginTop: '20px', background: 'var(--card)', padding: '25px', borderRadius: '15px', border: '1px solid rgba(108,92,231,0.1)', boxShadow: '0 5px 20px rgba(0,0,0,0.05)' }}>
-                        <h1 style={{ marginBottom: '15px', color: 'var(--p-purple)', fontSize: '1.8rem', fontWeight: 900 }}>
-                            {lang === 'ar' ? currentLecture.titleAr : currentLecture.titleEn}
-                        </h1>
-                        <div style={{ display: 'flex', gap: '20px', color: 'var(--txt-mut)', fontWeight: 'bold' }}>
-                            <span>{lang === 'ar' ? 'مدة المحاضرة:' : 'Duration:'} {currentLecture.duration}</span>
-                            {/* تقدر تضيف هنا أي معلومات تانية زي عدد المشاهدات أو تاريخ النشر */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '40px', background: 'var(--h-bg)', padding: '15px', borderRadius: '15px', width: 'fit-content' }}>
+                        <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'var(--p-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.5rem' }}>
+                            <FaChalkboardTeacher />
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '0.9rem', color: 'var(--txt-mut)' }}>{lang === 'ar' ? 'مقدم الدورة' : 'Instructor'}</div>
+                            <div style={{ fontWeight: 'bold', color: 'var(--txt)', fontSize: '1.1rem' }}>{course.instructor}</div>
                         </div>
                     </div>
-                </section>
 
-                {/* الجزء التاني: القائمة الجانبية (بياخد ضعف واحد) */}
-                <section className="sidebar-content" style={{ flex: '1', minWidth: '300px', position: 'sticky', top: '100px' }}>
-                    <LectureSidebar 
-                        lectures={lectures} 
-                        currentLectureId={lectureId} 
-                        courseId={courseId} 
-                        lang={lang} 
-                    />
-                </section>
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                        {/* 💡 زرار الدخول للمحاضرة الأولى */}
+                        <Link href={`/courses/${courseId}/lecture/1`} style={{ flex: '1', minWidth: '200px' }}>
+                            <button className="glow-btn" style={{ width: '100%', background: 'var(--p-purple)', color: 'white', border: 'none', padding: '15px 30px', borderRadius: '50px', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer' }}>
+                                <FaPlayCircle /> {lang === 'ar' ? 'ابدأ التعلم الآن' : 'Start Learning Now'}
+                            </button>
+                        </Link>
+                    </div>
+                </div>
+
+                {/* كارت السعر والصورة (يسار) */}
+                <div style={{ flex: '1 1 400px', display: 'flex', justifyContent: 'center' }}>
+                    <div style={{ background: 'var(--card)', borderRadius: '25px', overflow: 'hidden', border: '1px solid rgba(108,92,231,0.2)', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', width: '100%', maxWidth: '450px' }}>
+                        <img src={course.img} alt="Course" style={{ width: '100%', height: '250px', objectFit: 'cover' }} />
+                        <div style={{ padding: '30px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--p-purple)', marginBottom: '20px' }}>
+                                {course.price} {lang === 'ar' ? 'ج.م' : 'EGP'}
+                            </div>
+                            <button style={{ width: '100%', background: 'var(--bg)', color: 'var(--txt)', border: '2px solid var(--p-purple)', padding: '15px', borderRadius: '50px', fontSize: '1.1rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', transition: '0.3s' }} onMouseOver={(e) => { e.currentTarget.style.background = 'var(--p-purple)'; e.currentTarget.style.color = 'white'; }} onMouseOut={(e) => { e.currentTarget.style.background = 'var(--bg)'; e.currentTarget.style.color = 'var(--txt)'; }}>
+                                <FaShoppingCart /> {lang === 'ar' ? 'إضافة للسلة' : 'Add to Cart'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-
-            {/* 💡 الحل الجذري للموبايل بدون استخدام jsx */}
-            <style dangerouslySetInnerHTML={{__html: `
-                @media (max-width: 992px) {
-                    .lecture-layout { flex-direction: column !important; }
-                    .main-content { width: 100% !important; flex: auto !important; }
-                    .sidebar-content { width: 100% !important; flex: auto !important; position: static !important; margin-top: 20px; }
-                }
-            `}} />
-            
         </main>
     );
 }

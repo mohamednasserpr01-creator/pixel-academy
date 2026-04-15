@@ -1,302 +1,167 @@
 "use client";
-import React, { useState, useEffect, useRef, use } from 'react';
+import React, { useState, useEffect, use } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
-// 💡 1. مسحنا استدعاء الناف بار والفوتر من هنا
-import { useSettings } from '../../../../../context/SettingsContext'; // تأكد من مسار المركز السري بتاعنا
+import { useSettings } from '../../../../../context/SettingsContext';
+import { lectureService } from '../../../../../services/lectureService';
+import { PlaylistItem } from '../../../../../types'; 
 
-import { 
-    FaPlay, FaPause, FaBackward, FaForward, FaTachometerAlt, FaCog, FaExpand, FaVolumeUp,
-    FaCheck, FaLock, FaFilePdf, FaPencilAlt, FaClipboardCheck, FaComments, FaEllipsisV,
-    FaRobot, FaUserTie, FaPaperPlane, FaDownload, FaArrowRight
-} from 'react-icons/fa';
-
-// =========================================================================
-// 💡 MOCK LECTURE DATA
-// =========================================================================
-const fetchLectureData = async (courseId: string, lectureId: string) => {
-    return {
-        id: lectureId, courseId: courseId,
-        titleAr: "المحاضرة الأولى: التأسيس الذهني والمنهجي", titleEn: "Lecture 1: Foundation",
-        descAr: "في هذه المحاضرة سنناقش أساسيات المنهج وكيفية وضع خطة للمذاكرة الذكية لضمان الدرجة النهائية.",
-        descEn: "In this lecture, we discuss the basics of the curriculum and smart study plans.",
-        studentName: "Mahmoud_2026", 
-        playlist: [
-            { id: 'item1', type: 'exam', titleAr: "امتحان شامل على الباب السابق", titleEn: "Previous Chapter Exam", status: 'completed', isReq: true, questions: 20, timeLimit: 30 },
-            { id: 'item2', type: 'video', titleAr: "الجزء الأول: المفاهيم الأساسية", titleEn: "Part 1: Basic Concepts", status: 'active', time: "15:20", videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4", poster: "https://images.unsplash.com/photo-1434031211128-095490e7e73b?w=1200" },
-            { id: 'item3', type: 'video', titleAr: "الجزء الثاني: التطبيق العملي", titleEn: "Part 2: Practical Application", status: 'available', time: "22:10", videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4", poster: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200" },
-            { id: 'item4', type: 'pdf', titleAr: "ملزمة الشرح الأساسية (PDF)", titleEn: "Main Explanation PDF", status: 'available', link: "#" },
-            { id: 'item5', type: 'pdf', titleAr: "ملخص القوانين (PDF)", titleEn: "Formulas Summary PDF", status: 'available', link: "#" },
-            { id: 'item6', type: 'homework', titleAr: "واجب المحاضرة الأولى", titleEn: "Lecture 1 Homework", status: 'locked', isReq: true, questions: 15 },
-            { id: 'item7', type: 'video', titleAr: "فيديو حل الواجب (يفتح بعد التسليم)", titleEn: "Homework Solution Video", status: 'locked', time: "30:00", videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4", poster: "" },
-            { id: 'item8', type: 'exam', titleAr: "كويز سريع نهاية الحصة", titleEn: "Quick End-of-class Quiz", status: 'locked', isReq: true, questions: 5, timeLimit: 10 }
-        ]
-    };
-};
+import VideoPlayer from '../../../../../components/lecture/VideoPlayer/VideoPlayer';
+import LectureContent from '../../../../../components/lecture/LectureContent/LectureContent';
+import LectureChat from '../../../../../components/lecture/LectureChat/LectureChat';
+import LectureSidebar from '../../../../../components/lecture/LectureSidebar/LectureSidebar';
 
 export default function LectureRoom({ params }: { params: Promise<{ id: string, lectureId: string }> }) {
     const resolvedParams = use(params);
     const courseId = resolvedParams.id;
     const lectureId = resolvedParams.lectureId;
 
-    const [mounted, setMounted] = useState(false);
-    const [lecture, setLecture] = useState<any>(null);
-    const [activeItem, setActiveItem] = useState<any>(null);
-
-    // 💡 2. سحب اللغة من المركز مباشرة
     const { lang } = useSettings();
+    const [activeItem, setActiveItem] = useState<PlaylistItem | null>(null);
 
-    // Video Player States
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const playerContainerRef = useRef<HTMLDivElement>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [currentTimeStr, setCurrentTimeStr] = useState("00:00");
-    const [durationStr, setDurationStr] = useState("00:00");
-    const [showSpeedMenu, setShowSpeedMenu] = useState(false);
-    const [showQualityMenu, setShowQualityMenu] = useState(false);
-    const [wmPos, setWmPos] = useState({ top: '50%', left: '50%' });
-
-    // Chatbot State
-    const [chatMsgs, setChatMsgs] = useState<any[]>([]);
-    const [chatInput, setChatInput] = useState("");
-    const [showInitialOpts, setShowInitialOpts] = useState(true);
-    const chatBoxRef = useRef<HTMLDivElement>(null);
+    const { data: lecture, isLoading, isError } = useQuery({
+        queryKey: ['lecture', courseId, lectureId],
+        queryFn: () => lectureService.getLecture(courseId, lectureId),
+    });
 
     useEffect(() => {
-        setMounted(true);
-        fetchLectureData(courseId, lectureId).then(data => {
-            setLecture(data);
-            const firstActive = data.playlist.find((i:any) => i.status === 'active' || i.status === 'available' || i.status === 'completed');
-            setActiveItem(firstActive || data.playlist[0]);
-            
-            setChatMsgs([{ id: generateId(), sender: 'bot', text: lang === 'ar' ? 'أهلاً بك يا بطل! كيف تفضل المساعدة اليوم؟' : 'Hello! How can I help you today?' }]);
-        });
-
-        const wmInterval = setInterval(() => {
-            setWmPos({ top: `${Math.floor(Math.random() * 80)}%`, left: `${Math.floor(Math.random() * 80)}%` });
-        }, 4000);
-
-        return () => clearInterval(wmInterval);
-    }, [courseId, lectureId, lang]); // ضفنا الـ lang هنا عشان الشات يتحدث لو اللغة اتغيرت
-
-    useEffect(() => {
-        if (activeItem && activeItem.type === 'video' && videoRef.current) {
-            setIsPlaying(false);
-            setProgress(0);
-            setCurrentTimeStr("00:00");
-            videoRef.current.load();
+        if (lecture && !activeItem) {
+            const firstActive = lecture.playlist.find((i: PlaylistItem) => i.status === 'active' || i.status === 'available' || i.status === 'completed');
+            setActiveItem(firstActive || lecture.playlist[0]);
         }
-    }, [activeItem]);
+    }, [lecture, activeItem]);
 
-    useEffect(() => {
-        const handleClickOutside = () => { setShowSpeedMenu(false); setShowQualityMenu(false); };
-        window.addEventListener('click', handleClickOutside);
-        return () => window.removeEventListener('click', handleClickOutside);
-    }, []);
+    if (isLoading || !activeItem) return (
+        <main className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <div style={{ width: '50px', height: '50px', border: '4px solid rgba(108,92,231,0.2)', borderTopColor: 'var(--p-purple)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+        </main>
+    );
 
-    useEffect(() => { if(chatBoxRef.current) chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight; }, [chatMsgs]);
-
-    // ================= VIDEO PLAYER LOGIC =================
-    const formatTime = (sec: number) => { let m=Math.floor(sec/60), s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; };
-    const togglePlay = () => { if(videoRef.current) { if(videoRef.current.paused) { videoRef.current.play(); setIsPlaying(true); } else { videoRef.current.pause(); setIsPlaying(false); } } };
-    const handleTimeUpdate = () => { if(videoRef.current && videoRef.current.duration) { setProgress((videoRef.current.currentTime / videoRef.current.duration) * 100); setCurrentTimeStr(formatTime(videoRef.current.currentTime)); } };
-    const handleLoadedMeta = () => { if(videoRef.current) setDurationStr(formatTime(videoRef.current.duration)); };
-    const skipTime = (amount: number) => { if(videoRef.current) videoRef.current.currentTime += amount; };
-    const setSpeed = (speed: number) => { if(videoRef.current) videoRef.current.playbackRate = speed; setShowSpeedMenu(false); };
-    const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => { const area = e.currentTarget; const clickX = e.nativeEvent.offsetX; if(videoRef.current) videoRef.current.currentTime = (clickX / area.offsetWidth) * videoRef.current.duration; };
-    const toggleFullScreen = () => { if(!playerContainerRef.current) return; if (!document.fullscreenElement) { if (playerContainerRef.current.requestFullscreen) playerContainerRef.current.requestFullscreen(); } else { if (document.exitFullscreen) document.exitFullscreen(); } };
-    const handleContextMenu = (e: React.MouseEvent) => e.preventDefault();
-
-    // ================= CHATBOT LOGIC =================
-    const generateId = () => Date.now() + Math.random();
-
-    const handleChatOption = (type: 'ai'|'human') => {
-        setShowInitialOpts(false);
-        setChatMsgs(prev => [...prev, { id: generateId(), sender: 'user', text: type === 'ai' ? (lang === 'ar' ? 'أريد التحدث مع المساعد الذكي' : 'I want AI Assistant') : (lang === 'ar' ? 'أريد التحدث مع مدرس حقيقي' : 'I want human teacher') }]);
-        setTimeout(() => {
-            setChatMsgs(prev => [...prev, { id: generateId(), sender: 'bot', text: type === 'human' ? (lang === 'ar' ? 'تواصل مع الدعم عبر الواتساب.' : 'Contact support via WhatsApp.') : (lang === 'ar' ? 'أنا بيكسل AI! تفضل بسؤالك.' : 'I am Pixel AI! Ask your question.') }]);
-        }, 600);
-    };
-
-    const sendChat = () => {
-        if(!chatInput.trim()) return;
-        setShowInitialOpts(false);
-        setChatMsgs(prev => [...prev, { id: generateId(), sender: 'user', text: chatInput }]);
-        setChatInput("");
-        
-        const botMsgId = generateId();
-        
-        setTimeout(() => { 
-            setChatMsgs(prev => [...prev, { id: botMsgId, sender: 'bot', text: lang === 'ar' ? 'جاري التحليل...' : 'Analyzing...' }]); 
-            
-            setTimeout(() => {
-                setChatMsgs(prev => prev.map(msg => 
-                    msg.id === botMsgId 
-                        ? { ...msg, text: lang === 'ar' ? 'إجابة سؤالك موجودة في الدقيقة 12:00 من الفيديو، هل تحتاج شرح مبسط لها؟' : 'The answer is at 12:00 in the video. Need a simpler explanation?' } 
-                        : msg
-                ));
-            }, 1500);
-        }, 600);
-    };
-
-    if (!mounted || !lecture || !activeItem) return null;
-
-    const getIcon = (type: string) => { switch(type) { case 'exam': return <FaClipboardCheck />; case 'video': return <FaPlay />; case 'homework': return <FaPencilAlt />; case 'pdf': return <FaFilePdf />; default: return <FaPlay />; } };
-
-    const renderMainContent = () => {
-        if (activeItem.status === 'locked') {
-            return (
-                <div style={{ height: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--card)', borderRadius: '20px', border: '1px solid rgba(108,92,231,0.2)', textAlign: 'center', padding: '20px' }}>
-                    <FaLock style={{ fontSize: '4rem', color: '#7f8c8d', marginBottom: '20px' }} />
-                    <h2 style={{ marginBottom: '10px' }}>{lang === 'ar' ? 'هذا المحتوى مغلق' : 'Content Locked'}</h2>
-                    <p style={{ opacity: 0.8 }}>{lang === 'ar' ? 'يجب إنهاء المهام السابقة أولاً لفتح هذا الجزء.' : 'You must complete previous tasks to unlock this.'}</p>
-                </div>
-            );
-        }
-
-        switch (activeItem.type) {
-            case 'video':
-                return (
-                    <div className={`pixel-player ${!isPlaying ? 'paused' : ''}`} ref={playerContainerRef} onContextMenu={handleContextMenu}>
-                        <div className="watermark" style={{ top: wmPos.top, left: wmPos.left }}>{lecture.studentName}</div>
-                        <div className="video-cage" onClick={togglePlay}></div>
-                        
-                        <video ref={videoRef} src={activeItem.videoSrc} poster={activeItem.poster} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleLoadedMeta} playsInline></video>
-                        
-                        <div className="player-controls">
-                            <div className="progress-area" onClick={handleProgressClick}><div className="progress-filled" style={{ width: `${progress}%` }}></div></div>
-                            <div className="controls-row">
-                                <div className="controls-left">
-                                    <button className="ctrl-btn" onClick={togglePlay}>{isPlaying ? <FaPause /> : <FaPlay />}</button>
-                                    <button className="ctrl-btn" onClick={() => skipTime(document.documentElement.dir==='rtl' ? 10 : -10)}><FaBackward /></button>
-                                    <button className="ctrl-btn" onClick={() => skipTime(document.documentElement.dir==='rtl' ? -10 : 10)}><FaForward /></button>
-                                    <div className="time-display">{currentTimeStr} / {durationStr}</div>
-                                </div>
-                                <div className="controls-right">
-                                    <div className="speed-menu">
-                                        <button className="ctrl-btn" onClick={(e) => { e.stopPropagation(); setShowSpeedMenu(!showSpeedMenu); setShowQualityMenu(false); }}><FaTachometerAlt /></button>
-                                        <div className={`menu-popup ${showSpeedMenu ? 'show' : ''}`}>
-                                            <button onClick={() => setSpeed(2)}>2x</button><button onClick={() => setSpeed(1.5)}>1.5x</button><button onClick={() => setSpeed(1)}>1x</button>
-                                        </div>
-                                    </div>
-                                    <button className="ctrl-btn"><FaVolumeUp /></button>
-                                    <button className="ctrl-btn" onClick={toggleFullScreen}><FaExpand /></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            
-            case 'exam':
-            case 'homework':
-                return (
-                    <div style={{ padding: '50px', background: 'var(--card)', borderRadius: '20px', border: '1px solid rgba(108,92,231,0.2)', textAlign: 'center' }}>
-                        {activeItem.type === 'exam' ? <FaClipboardCheck style={{ fontSize: '4rem', color: '#e74c3c', marginBottom: '20px' }} /> : <FaPencilAlt style={{ fontSize: '4rem', color: '#f1c40f', marginBottom: '20px' }} />}
-                        <h2 style={{ fontSize: '2rem', marginBottom: '15px' }}>{lang === 'ar' ? activeItem.titleAr : activeItem.titleEn}</h2>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '30px', opacity: 0.8, fontWeight: 'bold' }}>
-                            <span>📋 {activeItem.questions} {lang === 'ar' ? 'سؤال' : 'Questions'}</span>
-                            {activeItem.timeLimit && <span>⏱️ {activeItem.timeLimit} {lang === 'ar' ? 'دقيقة' : 'Mins'}</span>}
-                        </div>
-                        <button className="glow-btn" style={{ padding: '15px 40px', fontSize: '1.1rem' }}>
-                            {lang === 'ar' ? 'ابدأ الحل الآن' : 'Start Now'} <FaArrowRight style={{ margin: '0 8px', transform: lang === 'ar' ? 'rotate(180deg)' : 'none' }} />
-                        </button>
-                    </div>
-                );
-
-            case 'pdf':
-                return (
-                    <div style={{ padding: '50px', background: 'var(--card)', borderRadius: '20px', border: '1px solid rgba(108,92,231,0.2)', textAlign: 'center' }}>
-                        <FaFilePdf style={{ fontSize: '5rem', color: '#e74c3c', marginBottom: '20px' }} />
-                        <h2 style={{ fontSize: '1.8rem', marginBottom: '15px' }}>{lang === 'ar' ? activeItem.titleAr : activeItem.titleEn}</h2>
-                        <p style={{ opacity: 0.8, marginBottom: '30px' }}>{lang === 'ar' ? 'يمكنك تصفح الملزمة أو تحميلها على جهازك.' : 'You can view or download the file.'}</p>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
-                            <button className="btn-primary" style={{ padding: '12px 30px', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <FaDownload /> {lang === 'ar' ? 'تحميل (PDF)' : 'Download PDF'}
-                            </button>
-                        </div>
-                    </div>
-                );
-
-            default:
-                return null;
-        }
-    };
+    if (isError || !lecture) return (
+        <main className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <h2 style={{ color: 'var(--danger)' }}>{lang === 'ar' ? 'عفواً، حدث خطأ أثناء تحميل المحاضرة.' : 'Oops, failed to load lecture.'}</h2>
+        </main>
+    );
 
     return (
-        // 💡 3. الكلاس السحري لحماية التصميم بدل الستايلات القديمة
-        <main className="page-wrapper" style={{ paddingTop: '50px' }}>
+        <main className="page-wrapper" style={{ paddingTop: '40px' }}>
             
-            <div className="room-container">
-                <main className="main-content">
-                    
-                    {renderMainContent()}
+            {/* 💡 السحر هنا: حقنا الـ CSS المفقود الخاص بالصفحة ومشغل الفيديو */}
+            <style dangerouslySetInnerHTML={{__html: `
+                .lecture-page-container {
+                    display: flex;
+                    gap: 30px;
+                    width: 100%;
+                    align-items: flex-start;
+                }
+                .lecture-sidebar-area {
+                    flex: 0 0 320px;
+                    position: sticky;
+                    top: 100px;
+                }
+                .lecture-main-area {
+                    flex: 1 1 0;
+                    min-width: 0;
+                }
+                
+                /* =========================================
+                   1. تصميم القائمة الجانبية (Playlist)
+                   ========================================= */
+                .playlist-sidebar {
+                    background: var(--card);
+                    border-radius: 15px;
+                    border: 1px solid rgba(108,92,231,0.2);
+                    padding: 20px;
+                }
+                .playlist-header { margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
+                .playlist-header h3 { color: var(--p-purple); margin-bottom: 10px; font-weight: 900; }
+                .progress-container { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; margin-top: 5px; }
+                .progress-bar { height: 100%; background: #2ecc71; transition: 0.3s; }
+                .pl-item { display: flex; gap: 15px; padding: 15px; background: rgba(0,0,0,0.1); border: 2px solid transparent; border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: 0.3s; }
+                .pl-item:hover { background: rgba(108,92,231,0.05); }
+                .pl-item.active { background: rgba(108,92,231,0.1); border-color: var(--p-purple); }
+                .pl-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--bg); color: var(--p-purple); flex-shrink: 0; }
+                .pl-item.completed .pl-icon { color: #2ecc71; background: rgba(46,204,113,0.1); }
+                .pl-item.locked .pl-icon { color: #7f8c8d; background: rgba(127,140,141,0.1); }
+                .pl-info h4 { font-size: 0.95rem; margin-bottom: 5px; color: var(--txt); font-weight: 900; }
+                .pl-meta { font-size: 0.8rem; color: var(--txt-mut); font-weight: bold; }
+                .req-badge { background: rgba(231,76,60,0.1); color: #e74c3c; padding: 2px 8px; border-radius: 5px; font-size: 0.7rem; margin-right: 5px; }
 
-                    <div className="lecture-details">
-                        <h1>{lang === 'ar' ? activeItem.titleAr : activeItem.titleEn}</h1>
-                        <p style={{ opacity: 0.8, lineHeight: 1.8, fontWeight: 700 }}>
+                /* =========================================
+                   2. تصميم الشات (Chatbot)
+                   ========================================= */
+                .chat-section { background: var(--card); border-radius: 15px; border: 1px solid rgba(108,92,231,0.2); overflow: hidden; margin-top: 30px; display: flex; flex-direction: column; }
+                .chat-header { background: var(--p-purple); color: white; padding: 15px 20px; font-weight: 900; display: flex; justify-content: space-between; align-items: center; }
+                #chat-msgs { height: 350px; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+                .msg { max-width: 80%; padding: 12px 18px; border-radius: 15px; font-weight: bold; font-size: 0.95rem; line-height: 1.5; }
+                .msg.bot { align-self: flex-start; background: rgba(108,92,231,0.15); border-bottom-right-radius: 2px; color: var(--txt); }
+                .msg.user { align-self: flex-end; background: var(--p-purple); border-bottom-left-radius: 2px; color: white; }
+                .chat-options { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+                .chat-opt-btn { background: var(--bg); border: 1px solid var(--p-purple); color: var(--txt); padding: 8px 15px; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; gap: 5px; transition: 0.3s; }
+                .chat-opt-btn:hover { background: var(--p-purple); color: white; }
+                .chat-input { display: flex; padding: 15px; background: rgba(0,0,0,0.1); border-top: 1px solid rgba(255,255,255,0.05); gap: 10px; }
+                .chat-input input { flex: 1; background: var(--bg); border: 1px solid rgba(108,92,231,0.3); padding: 12px 20px; border-radius: 50px; color: var(--txt); outline: none; font-weight: bold; }
+                .chat-input button { width: 45px; height: 45px; border-radius: 50%; background: var(--p-purple); border: none; color: white; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 1.1rem; }
+
+                /* =========================================
+                   3. تصميم مشغل الفيديو (Video Player)
+                   ========================================= */
+                .pixel-player { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; }
+                .pixel-player video { width: 100%; height: 100%; object-fit: contain; }
+                .watermark { position: absolute; color: rgba(255,255,255,0.2); font-size: 1.5rem; font-weight: 900; pointer-events: none; z-index: 5; transition: 1s ease-in-out; }
+                .video-cage { position: absolute; inset: 0; z-index: 10; cursor: pointer; }
+                .player-controls { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.9)); padding: 20px; z-index: 20; opacity: 0; transition: opacity 0.3s; display: flex; flex-direction: column; gap: 12px; }
+                .pixel-player:hover .player-controls, .pixel-player.paused .player-controls { opacity: 1; }
+                .progress-area { width: 100%; height: 8px; background: rgba(255,255,255,0.3); border-radius: 4px; cursor: pointer; position: relative; }
+                .progress-filled { height: 100%; background: var(--p-purple); border-radius: 4px; transition: width 0.1s linear; pointer-events: none; }
+                .controls-row { display: flex; justify-content: space-between; align-items: center; }
+                .controls-left, .controls-right { display: flex; align-items: center; gap: 20px; }
+                .ctrl-btn { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; transition: 0.3s; display: flex; align-items: center; }
+                .ctrl-btn:hover { color: var(--p-purple); transform: scale(1.15); }
+                .time-display { color: white; font-size: 0.95rem; font-weight: bold; font-family: monospace; letter-spacing: 1px; }
+                .speed-menu { position: relative; }
+                .menu-popup { position: absolute; bottom: 150%; left: 50%; transform: translateX(-50%); background: var(--card); border: 1px solid var(--p-purple); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 5px; opacity: 0; visibility: hidden; transition: 0.2s; z-index: 30; }
+                .menu-popup.show { opacity: 1; visibility: visible; }
+                .menu-popup button { background: transparent; color: white; border: none; padding: 8px 20px; cursor: pointer; border-radius: 5px; font-weight: bold; }
+                .menu-popup button:hover { background: var(--p-purple); }
+
+                /* الموبايل والتابلت */
+                @media (max-width: 1024px) {
+                    .lecture-page-container { flex-direction: column-reverse; }
+                    .lecture-sidebar-area { width: 100%; flex: auto; position: static; }
+                    .lecture-main-area { width: 100%; flex: auto; }
+                }
+            `}} />
+
+            <div className="lecture-page-container">
+                
+                {/* 1. القائمة الجانبية (يمين الشاشة) */}
+                <div className="lecture-sidebar-area">
+                    <LectureSidebar lecture={lecture} activeItem={activeItem} setActiveItem={setActiveItem} lang={lang} />
+                </div>
+
+                {/* 2. مساحة العرض الرئيسية (يسار الشاشة) */}
+                <div className="lecture-main-area">
+                    
+                    {activeItem.type === 'video' && activeItem.status !== 'locked' ? (
+                        <VideoPlayer activeItem={activeItem} studentName={lecture.studentName} />
+                    ) : (
+                        <LectureContent activeItem={activeItem} lang={lang} />
+                    )}
+
+                    <div className="lecture-details" style={{ marginTop: '25px', background: 'var(--card)', padding: '25px', borderRadius: '15px', border: '1px solid rgba(108,92,231,0.1)' }}>
+                        <h1 style={{ marginBottom: '15px', color: 'var(--p-purple)', fontSize: '1.6rem', fontWeight: 900 }}>
+                            {lang === 'ar' ? activeItem.titleAr : activeItem.titleEn}
+                        </h1>
+                        <p style={{ opacity: 0.9, lineHeight: 1.8, fontWeight: 700, color: 'var(--txt)' }}>
                             {lang === 'ar' ? lecture.descAr : lecture.descEn}
                         </p>
                     </div>
 
-                    <div className="chat-section">
-                        <div className="chat-header">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><FaComments /> {lang === 'ar' ? 'مركز المساعدة الذكي' : 'Smart Help Center'}</div>
-                            <FaEllipsisV style={{ cursor: 'pointer' }} />
-                        </div>
-                        <div id="chat-msgs" ref={chatBoxRef}>
-                            {chatMsgs.map((msg) => (
-                                <div key={msg.id} className={`msg ${msg.sender}`}>
-                                    {msg.text}
-                                    {msg.id === chatMsgs[0]?.id && showInitialOpts && (
-                                        <div className="chat-options">
-                                            <button className="chat-opt-btn" onClick={() => handleChatOption('ai')}><FaRobot /> {lang==='ar'?'مساعد ذكي (AI)':'AI Assistant'}</button>
-                                            <button className="chat-opt-btn" onClick={() => handleChatOption('human')}><FaUserTie /> {lang==='ar'?'مدرس حقيقي':'Human Teacher'}</button>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        <div className="chat-input">
-                            <input 
-                                type="text" 
-                                value={chatInput}
-                                onChange={(e) => setChatInput(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && sendChat()}
-                                placeholder={lang === 'ar' ? 'اكتب رسالتك هنا...' : 'Type your message...'} 
-                            />
-                            <button onClick={sendChat}><FaPaperPlane /></button>
-                        </div>
-                    </div>
-                </main>
+                    <LectureChat lang={lang} />
+                    
+                </div>
 
-                <aside className="playlist-sidebar">
-                    <div className="playlist-header">
-                        <h3>{lang === 'ar' ? 'محتويات المحاضرة' : 'Lecture Content'}</h3>
-                        <div style={{ fontSize: '0.8rem', fontWeight: 'bold', opacity: 0.8 }}>{lang === 'ar' ? 'نسبة الإنجاز:' : 'Progress:'} 12%</div>
-                        <div className="progress-container"><div className="progress-bar" style={{ width: '12%' }}></div></div>
-                    </div>
-                    <div className="playlist-items">
-                        {lecture.playlist.map((item: any) => (
-                            <div 
-                                key={item.id} 
-                                className={`pl-item ${item.status} ${activeItem.id === item.id ? 'active' : ''}`}
-                                onClick={() => { if(item.status !== 'locked') setActiveItem(item); }}
-                            >
-                                <div className="pl-icon">
-                                    {item.status === 'locked' ? <FaLock /> : (item.status === 'completed' ? <FaCheck /> : getIcon(item.type))}
-                                </div>
-                                <div className="pl-info">
-                                    <h4>{lang === 'ar' ? item.titleAr : item.titleEn} {item.isReq && <span className="req-badge">{lang === 'ar' ? 'إجباري' : 'Req'}</span>}</h4>
-                                    <span className="pl-meta">
-                                        {item.status === 'locked' ? (lang === 'ar' ? 'مغلق' : 'Locked') : 
-                                        (item.status === 'completed' ? (lang === 'ar' ? 'تم الاجتياز' : 'Completed') : 
-                                        (item.time ? `${item.time} ${lang === 'ar' ? 'دقيقة' : 'Mins'}` : (lang === 'ar' ? 'متاح الآن' : 'Available')))}
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </aside>
             </div>
         </main>
     );

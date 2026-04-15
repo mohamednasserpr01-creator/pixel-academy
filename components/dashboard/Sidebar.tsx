@@ -1,3 +1,4 @@
+// FILE: components/dashboard/Sidebar.tsx
 "use client";
 import React from 'react';
 import { 
@@ -13,42 +14,45 @@ interface SidebarProps {
     closeMobileSidebar: () => void;
     currentAvatar: string;
     openAvatarModal: () => void;
+    lang: string; // 💡 تم إضافة اللغة هنا لحل خطأ الـ TypeScript
 }
 
-export default function Sidebar({ activeTab, setActiveTab, isMobileOpen, closeMobileSidebar, currentAvatar, openAvatarModal }: SidebarProps) {
+export default function Sidebar({ activeTab, setActiveTab, isMobileOpen, closeMobileSidebar, currentAvatar, openAvatarModal, lang }: SidebarProps) {
+    const isAr = lang === 'ar';
+
     const navItems = [
-        { id: 'overview', icon: <FaHome />, label: 'نظرة عامة' },
-        { id: 'courses', icon: <FaPlayCircle />, label: 'مسيرتي التعليمية' },
-        { id: 'exams', icon: <FaFileAlt />, label: 'الامتحانات والواجبات' },
-        { id: 'financials', icon: <FaMoneyCheckAlt />, label: 'المحفظة والأكواد' },
-        { id: 'orders', icon: <FaBoxOpen />, label: 'طلبات المتجر' },
-        { id: 'analytics', icon: <FaChartPie />, label: 'تحليل الأداء' },
-        { id: 'activity', icon: <FaHistory />, label: 'سجل العمليات الكامل' },
-        { id: 'settings', icon: <FaCog />, label: 'إعدادات الحساب والأمان' }
+        { id: 'overview', icon: <FaHome />, label: isAr ? 'نظرة عامة' : 'Overview' },
+        { id: 'courses', icon: <FaPlayCircle />, label: isAr ? 'مسيرتي التعليمية' : 'My Courses' },
+        { id: 'exams', icon: <FaFileAlt />, label: isAr ? 'الامتحانات والواجبات' : 'Exams & Homework' },
+        { id: 'financials', icon: <FaMoneyCheckAlt />, label: isAr ? 'المحفظة والأكواد' : 'Wallet & Codes' },
+        { id: 'orders', icon: <FaBoxOpen />, label: isAr ? 'طلبات المتجر' : 'Store Orders' },
+        { id: 'analytics', icon: <FaChartPie />, label: isAr ? 'تحليل الأداء' : 'Analytics' },
+        { id: 'activity', icon: <FaHistory />, label: isAr ? 'سجل العمليات الكامل' : 'Activity History' },
+        { id: 'settings', icon: <FaCog />, label: isAr ? 'إعدادات الحساب والأمان' : 'Account Settings' }
     ];
 
     return (
         <>
             <div className={`sidebar-overlay ${isMobileOpen ? 'active' : ''}`} onClick={closeMobileSidebar}></div>
 
-            <aside className={`dash-sidebar ${isMobileOpen ? 'active' : ''}`}>
-                <button className="mobile-close-sidebar" onClick={closeMobileSidebar}><FaTimes /></button>
+            <aside className={`dash-sidebar ${isMobileOpen ? 'active' : ''}`} style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+                <button className="mobile-close-sidebar" onClick={closeMobileSidebar} style={{ left: isAr ? '10px' : 'auto', right: isAr ? 'auto' : '10px' }}><FaTimes /></button>
                 
                 <div className="student-id-card">
                     <div className="avatar-container">
                         <img src={currentAvatar} alt="Student" />
-                        <button className="edit-avatar-btn" onClick={openAvatarModal} title="تغيير الأفاتار"><FaPencilAlt size={12} /></button>
+                        <button className="edit-avatar-btn" onClick={openAvatarModal} title={isAr ? "تغيير الأفاتار" : "Change Avatar"}><FaPencilAlt size={12} /></button>
                     </div>
-                    <h3>أحمد محمود</h3>
+                    <h3>{isAr ? 'أحمد محمود' : 'Ahmed Mahmoud'}</h3>
                     <p>@Ahmed_Pixel_99</p>
                     
                     <div className="rank-box">
-                        <div className="rank-val"><FaTrophy /> المركز: 15 على المنصة</div>
-                        <div className="score-val">نقاط العبقرية: 8,450 نقطة</div>
+                        <div className="rank-val"><FaTrophy /> {isAr ? 'المركز: 15 على المنصة' : 'Rank: 15 Platform-wide'}</div>
+                        <div className="score-val">{isAr ? 'نقاط العبقرية: 8,450 نقطة' : 'Genius Points: 8,450'}</div>
                     </div>
                     
-                    <div className="secret-code-box" title="مرر الماوس لرؤية الكود">
-                        <span><FaLock /> كود ولي الأمر السري:</span>
+                    <div className="secret-code-box" title={isAr ? "مرر الماوس لرؤية الكود" : "Hover to reveal code"}>
+                        <span><FaLock /> {isAr ? 'كود ولي الأمر السري:' : 'Parent Secret Code:'}</span>
                         <div className="secret-code">PX-7845-XY</div>
                     </div>
                 </div>
@@ -62,6 +66,7 @@ export default function Sidebar({ activeTab, setActiveTab, isMobileOpen, closeMo
                                 setActiveTab(item.id);
                                 closeMobileSidebar(); 
                             }}
+                            style={{ justifyContent: 'flex-start', gap: '15px' }}
                         >
                             {item.icon} {item.label}
                         </button>

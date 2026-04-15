@@ -29,8 +29,7 @@ export default function Home() {
 
     return (
         // مسحنا الستايلات القديمة واعتمدنا على الكلاس النظيف
-        <main className="page-wrapper">
-            
+<main className="main-content-wrapper" style={{ paddingTop: '80px' }}>            
             <Hero lang={lang} />
             <CoursesSection lang={lang} />
             <ServicesSection lang={lang} />

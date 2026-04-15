@@ -1,9 +1,9 @@
+// FILE: components/auth/LoginForm.tsx
 "use client";
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaSignInAlt, FaWhatsapp } from 'react-icons/fa';
 
-// 💡 استدعاء Context تسجيل الدخول والإعدادات
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 
@@ -16,13 +16,11 @@ export default function LoginForm({ onSwitchView }: Props) {
     const [globalError, setGlobalError] = useState('');
 
     const { login } = useAuth();
-    // 💡 سحب اللغة من المركز
     const { lang } = useSettings();
 
     const handleLogin = () => {
         setGlobalError('');
         
-        // محاكاة للتحقق المبدئي
         if (!loginData.phone || !loginData.pass) {
             return setGlobalError(lang === 'ar' ? "يرجى إدخال رقم الهاتف وكلمة المرور." : "Please enter phone number and password.");
         }
@@ -31,8 +29,8 @@ export default function LoginForm({ onSwitchView }: Props) {
             return setGlobalError(lang === 'ar' ? "رقم الهاتف غير صحيح، يجب أن يتكون من 11 رقم." : "Invalid phone number, must be 11 digits.");
         }
 
-        // 💡 تشغيل تسجيل الدخول المركزي
-        login(loginData.phone);
+        // 💡 تم حل المشكلة: إرسال الـ phone و الـ pass معاً للـ Context
+        login(loginData.phone, loginData.pass);
     };
 
     return (

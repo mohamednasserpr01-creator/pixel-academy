@@ -1,6 +1,6 @@
-// services/courseService.ts
+// FILE: services/courseService.ts
 import { fetchAPI } from '../lib/api';
-import { Course, Lecture } from '../types';
+import { Course, LectureData } from '../types';
 
 export const courseService = {
     // جلب كل الكورسات
@@ -22,10 +22,23 @@ export const courseService = {
     },
 
     // جلب محاضرات كورس معين
-    getCourseLectures: async (courseId: string | number): Promise<Lecture[]> => {
-        // return fetchAPI<Lecture[]>(`/courses/${courseId}/lectures`);
+    getCourseLectures: async (courseId: string | number): Promise<LectureData[]> => {
+        // return fetchAPI<LectureData[]>(`/courses/${courseId}/lectures`);
+        
+        // 💡 تم تحديث الـ Mock Data هنا عشان تتطابق مع نوع LectureData الجديد (نظام الـ Playlist)
         return [
-            { id: 'l1', courseId, titleAr: 'الفصل الأول', titleEn: 'Chapter 1', videoUrl: 'vid1.mp4', duration: '1:20:00', isLocked: false },
+            { 
+                id: 'l1', 
+                courseId, 
+                titleAr: 'الفصل الأول', 
+                titleEn: 'Chapter 1', 
+                descAr: 'مقدمة الفصل الأول',
+                descEn: 'Chapter 1 Intro',
+                studentName: 'Pixel_Student',
+                playlist: [
+                    { id: 'p1', type: 'video', titleAr: 'مقدمة', titleEn: 'Intro', status: 'active' }
+                ]
+            },
         ];
     }
 };

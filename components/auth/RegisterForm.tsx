@@ -1,9 +1,9 @@
+// FILE: components/auth/RegisterForm.tsx
 "use client";
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaUserPlus, FaEye, FaEyeSlash } from 'react-icons/fa';
 
-// 💡 استدعاء Context تسجيل الدخول
 import { useAuth } from '../../context/AuthContext';
 
 interface Props {
@@ -11,13 +11,11 @@ interface Props {
     onSuccess: () => void;
     onShowTerms: () => void;
     termsAccepted: boolean;
-    lang: 'ar' | 'en';
+    lang: string; // 💡 تم حل المشكلة: تم تعديل النوع إلى string عشان يقبل القيمة من صفحة الأوث
 }
 
 export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, termsAccepted, lang }: Props) {
     const isAr = lang === 'ar';
-    
-    // 💡 استدعاء دالة الدخول من الـ Context
     const { login } = useAuth();
     
     const [regData, setRegData] = useState({ name: '', phone: '', parent: '', gov: '', address: '', school: '', pass: '' });
@@ -65,9 +63,8 @@ export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, ter
     };
 
     const handleRegister = () => {
-        // تشغيل تسجيل الدخول المركزي
-        login(regData.phone);
-        // تشغيل نافذة الترحيب
+        // 💡 تم حل المشكلة: إرسال الـ phone و الـ pass معاً للـ Context
+        login(regData.phone, regData.pass);
         onSuccess();
     };
 
