@@ -2,22 +2,50 @@
 "use client";
 import React, { useState, use } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import dynamic from 'next/dynamic'; // 💡 1. استدعاء دالة التحميل الديناميكي
 
 // استدعاء الخدمات والإعدادات
 import { useSettings } from '../../../context/SettingsContext';
 import { useToast } from '../../../context/ToastContext'; 
 import { examService } from '../../../services/examService';
 
-// استدعاء المكونات اللي فصلناها
+// 💡 شاشة البداية هتحمل فوراً لأنها الواجهة الأولى
 import ExamIntro from '../../../components/exam/ExamIntro';
-import ExamLive from '../../../components/exam/ExamLive';
-import ExamResult from '../../../components/exam/ExamResult';
-import ExamReview from '../../../components/exam/ExamReview';
 
 // استدعاء مكونات الـ UI System
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { Modal } from '../../../components/ui/Modal';
 import { Button } from '../../../components/ui/Button';
+
+// 💡 2. Lazy Loading للمكونات الثقيلة مع منع الـ SSR لحماية التايمر ونظام الغش
+const ExamLive = dynamic(
+    () => import('../../../components/exam/ExamLive'),
+    { 
+        ssr: false, 
+        loading: () => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <Skeleton variant="text" height="40px" width="30%" />
+                <Skeleton variant="rectangular" height="300px" width="100%" />
+            </div>
+        )
+    }
+);
+
+const ExamResult = dynamic(
+    () => import('../../../components/exam/ExamResult'),
+    { 
+        ssr: false,
+        loading: () => <Skeleton variant="rectangular" height="300px" width="100%" />
+    }
+);
+
+const ExamReview = dynamic(
+    () => import('../../../components/exam/ExamReview'),
+    { 
+        ssr: false,
+        loading: () => <Skeleton variant="rectangular" height="400px" width="100%" />
+    }
+);
 
 export default function ExamRoom({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params);
@@ -46,14 +74,12 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
         if (!exam) return;
 
         if (!isForceSubmit) {
-            // التحقق من وجود أسئلة لم يتم الإجابة عليها
             const unanswered = exam.questions.some(q => {
                 const ans = answers[q.id];
                 return ans === undefined || ans === null || ans.toString().trim() === '';
             });
 
             if (unanswered) {
-                // 💡 تم التعديل إلى 'error' بدلاً من 'warning'
                 showToast(isAr ? '⚠️ يرجى الإجابة على جميع الأسئلة قبل التسليم!' : '⚠️ Please answer all questions before submitting!', 'error');
                 return;
             }
@@ -86,7 +112,6 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
         showToast(isAr ? 'تم تسليم الامتحان بنجاح 🎓' : 'Exam submitted successfully 🎓', 'success');
     };
 
-    // 💡 تم حل مشكلة الـ style عن طريق تغليف الـ Skeleton في div
     if (isLoading || !exam) return (
         <main className="page-wrapper" style={{ paddingTop: '50px' }}>
             <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto', background: 'var(--card)', borderRadius: '20px', padding: '30px', border: '1px solid rgba(108,92,231,0.2)' }}>
@@ -118,6 +143,7 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
                     <ExamIntro exam={exam} lang={lang} onStart={() => setStep('live')} />
                 )}
 
+                {/* المكونات دي هتحمل بس لما الطالب يوصل للخطوة بتاعتها */}
                 {step === 'live' && (
                     <ExamLive 
                         exam={exam} 

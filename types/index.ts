@@ -3,12 +3,14 @@
 // ==========================================
 // 1. أنواع المستخدمين (User Types)
 // ==========================================
+export type UserRole = 'student' | 'teacher' | 'admin';
+
 export interface User {
     id: string;
     name: string;
     email: string;
-    phone?: string; // 💡 تم إضافة رقم الهاتف هنا لحل مشكلة الداشبورد
-    role: 'student' | 'teacher' | 'admin';
+    phone?: string; 
+    role: UserRole;
     avatar?: string;
     token?: string;
 }
@@ -17,7 +19,7 @@ export interface User {
 // 2. أنواع الكورسات (Course Types)
 // ==========================================
 export interface Course {
-    id: string | number;
+    id: string | number; // يفضل توحيدها لاحقاً لـ string
     img: string;
     titleAr: string;
     titleEn: string;
@@ -49,7 +51,6 @@ export interface PlaylistItem {
     timeLimit?: number;    // الوقت المسموح للامتحان بالدقائق
 }
 
-// هذا النوع يحل محل الـ Lecture القديم ليدعم النظام الجديد
 export interface LectureData {
     id: string;
     courseId: string | number;
@@ -70,7 +71,7 @@ export interface Offer {
     titleAr: string;
     titleEn: string;
     descAr: string;
-    descEn: string; // تمت إضافتها لتطابق الداتا عندك
+    descEn: string;
     discountPercentage?: number;
 }
 
@@ -128,4 +129,24 @@ export interface Homework {
     isMandatory: boolean;
     totalScore: number;
     questions: HwQuestion[];
+}
+// ==========================================
+// 7. أنواع الشات الذكي (Chat Types)
+// ==========================================
+export interface ChatMessage {
+    id: string | number;
+    sender: 'user' | 'bot' | 'system';
+    text: string;
+    time?: string;
+}
+// ==========================================
+// 8. أنواع الخدمات (Services Types)
+// ==========================================
+export interface Service {
+    icon: string;
+    titleAr: string;
+    titleEn: string;
+    descAr?: string;
+    descEn?: string;
+    link?: string;
 }

@@ -3,16 +3,28 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaPlay, FaPause, FaBackward, FaForward, FaTachometerAlt, FaVolumeUp, FaExpand } from 'react-icons/fa';
 
-import { useToast } from '../../../context/ToastContext'; // 💡 استدعاء الإشعارات
-import { useSettings } from '../../../context/SettingsContext'; // 💡 استدعاء الإعدادات للغة
+import { useToast } from '../../../context/ToastContext'; 
+import { useSettings } from '../../../context/SettingsContext'; 
 
-export default function VideoPlayer({ activeItem, studentName }: { activeItem: any, studentName: string }) {
+// 💡 1. استدعاء نظام التتبع وأنواع الداتا الصارمة
+import { trackingService } from '../../../services/trackingService';
+import { PlaylistItem } from '../../../types';
+
+interface VideoPlayerProps {
+    activeItem: PlaylistItem;
+    studentName: string;
+}
+
+export default function VideoPlayer({ activeItem, studentName }: VideoPlayerProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const playerContainerRef = useRef<HTMLDivElement>(null);
     
     const { showToast } = useToast();
     const { lang } = useSettings();
     const isAr = lang === 'ar';
+
+    // 💡 مؤقتاً هنستخدم اسم الطالب كـ ID لحد ما نربط الـ Auth
+    const currentUserId = studentName || "UNKNOWN_USER";
 
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -21,7 +33,6 @@ export default function VideoPlayer({ activeItem, studentName }: { activeItem: a
     const [showSpeedMenu, setShowSpeedMenu] = useState(false);
     const [wmPos, setWmPos] = useState({ top: '50%', left: '50%' });
 
-    // 💡 تحريك العلامة المائية كل 4 ثواني لحماية الفيديو
     useEffect(() => {
         const wmInterval = setInterval(() => {
             setWmPos({ 
@@ -32,7 +43,6 @@ export default function VideoPlayer({ activeItem, studentName }: { activeItem: a
         return () => clearInterval(wmInterval);
     }, []);
 
-    // 💡 إعادة ضبط المشغل لما الطالب يختار فيديو جديد
     useEffect(() => {
         if (videoRef.current) {
             setIsPlaying(false); 
@@ -43,7 +53,6 @@ export default function VideoPlayer({ activeItem, studentName }: { activeItem: a
         }
     }, [activeItem]);
 
-    // 💡 إغلاق قائمة السرعة لو الطالب داس في أي مكان بره
     useEffect(() => {
         const handleClickOutside = () => setShowSpeedMenu(false);
         if (showSpeedMenu) {
@@ -58,10 +67,30 @@ export default function VideoPlayer({ activeItem, studentName }: { activeItem: a
         return `${m}:${s < 10 ? '0' + s : s}`; 
     };
 
+    // 💡 2. تتبع تشغيل وإيقاف الفيديو
     const togglePlay = () => { 
         if (videoRef.current) { 
-            videoRef.current.paused ? videoRef.current.play() : videoRef.current.pause(); 
-            setIsPlaying(!videoRef.current.paused); 
+            if (videoRef.current.paused) {
+                videoRef.current.play();
+                setIsPlaying(true);
+                // إرسال حدث التشغيل
+                trackingService.track({
+                    userId: currentUserId,
+                    lectureId: activeItem.id,
+                    eventType: 'video_play',
+                    eventData: { currentTime: videoRef.current.currentTime }
+                });
+            } else {
+                videoRef.current.pause();
+                setIsPlaying(false);
+                // إرسال حدث الإيقاف المؤقت
+                trackingService.track({
+                    userId: currentUserId,
+                    lectureId: activeItem.id,
+                    eventType: 'video_pause',
+                    eventData: { currentTime: videoRef.current.currentTime }
+                });
+            }
         } 
     };
 
@@ -78,17 +107,32 @@ export default function VideoPlayer({ activeItem, studentName }: { activeItem: a
         }
     };
 
-    // 💡 إشعار ذكي عند انتهاء الفيديو
+    // 💡 3. تتبع انتهاء الفيديو (أهم حدث للمدرس)
     const handleVideoEnded = () => {
         setIsPlaying(false);
         showToast(isAr ? 'تم إنجاز الفيديو بنجاح! 🎓' : 'Video completed successfully! 🎓', 'success');
+        
+        trackingService.track({
+            userId: currentUserId,
+            lectureId: activeItem.id,
+            eventType: 'video_complete',
+            eventData: { duration: videoRef.current?.duration }
+        });
     };
 
+    // 💡 4. تتبع تقديم وتأخير الفيديو (الـ Seek)
     const skipTime = (amount: number) => { 
-        if (videoRef.current) videoRef.current.currentTime += amount; 
+        if (videoRef.current) {
+            videoRef.current.currentTime += amount;
+            trackingService.track({
+                userId: currentUserId,
+                lectureId: activeItem.id,
+                eventType: 'video_seek',
+                eventData: { jumpBy: amount, newTime: videoRef.current.currentTime }
+            });
+        }
     };
 
-    // 💡 إشعار بتغيير السرعة
     const setSpeed = (speed: number) => { 
         if (videoRef.current) {
             videoRef.current.playbackRate = speed; 
@@ -97,11 +141,20 @@ export default function VideoPlayer({ activeItem, studentName }: { activeItem: a
         }
     };
 
+    // 💡 5. تتبع القفز بالماوس على شريط التقدم
     const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => { 
         const area = e.currentTarget; 
         const clickX = e.nativeEvent.offsetX; 
         if (videoRef.current) {
-            videoRef.current.currentTime = (clickX / area.offsetWidth) * videoRef.current.duration; 
+            const newTime = (clickX / area.offsetWidth) * videoRef.current.duration;
+            videoRef.current.currentTime = newTime; 
+            
+            trackingService.track({
+                userId: currentUserId,
+                lectureId: activeItem.id,
+                eventType: 'video_seek',
+                eventData: { clickedOnBar: true, newTime: newTime }
+            });
         }
     };
 
@@ -128,7 +181,7 @@ export default function VideoPlayer({ activeItem, studentName }: { activeItem: a
                 poster={activeItem.poster} 
                 onTimeUpdate={handleTimeUpdate} 
                 onLoadedMetadata={handleLoadedMetadata} 
-                onEnded={handleVideoEnded} /* 💡 تفعيل حدث الانتهاء */
+                onEnded={handleVideoEnded} 
                 playsInline
             ></video>
             

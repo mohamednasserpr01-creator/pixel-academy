@@ -2,19 +2,42 @@
 "use client";
 import React, { useState, useEffect, use } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import dynamic from 'next/dynamic'; // 💡 1. استدعاء دالة التحميل الديناميكي
 
 import { useSettings } from '../../../../../context/SettingsContext';
 import { lectureService } from '../../../../../services/lectureService';
 import { PlaylistItem } from '../../../../../types'; 
 
-import VideoPlayer from '../../../../../components/lecture/VideoPlayer/VideoPlayer';
-import LectureContent from '../../../../../components/lecture/LectureContent/LectureContent';
-import LectureChat from '../../../../../components/lecture/LectureChat/LectureChat';
+// استدعاء المكونات الأساسية الخفيفة بشكل عادي (لأنها مسؤولة عن هيكل الصفحة)
 import LectureSidebar from '../../../../../components/lecture/LectureSidebar/LectureSidebar';
-
-// 💡 1. استدعاء مكون التحميل الذكي وملف الـ CSS النظيف
 import { Skeleton } from '../../../../../components/ui/Skeleton';
 import './LectureRoom.css';
+
+// 💡 2. Lazy Loading للمكونات الثقيلة 
+// ssr: false بتمنع السيرفر إنه يحاول يرندر الفيديو والشات (وده بيقلل الـ Bundle size جداً)
+const VideoPlayer = dynamic(
+    () => import('../../../../../components/lecture/VideoPlayer/VideoPlayer'), 
+    { 
+        ssr: false, 
+        loading: () => <Skeleton variant="rectangular" height="400px" /> 
+    }
+);
+
+const LectureChat = dynamic(
+    () => import('../../../../../components/lecture/LectureChat/LectureChat'), 
+    { 
+        ssr: false, 
+        loading: () => <Skeleton variant="rectangular" height="350px" /> 
+    }
+);
+
+const LectureContent = dynamic(
+    () => import('../../../../../components/lecture/LectureContent/LectureContent'), 
+    { 
+        ssr: false, 
+        loading: () => <Skeleton variant="rectangular" height="400px" /> 
+    }
+);
 
 export default function LectureRoom({ params }: { params: Promise<{ id: string, lectureId: string }> }) {
     const resolvedParams = use(params);
@@ -36,7 +59,7 @@ export default function LectureRoom({ params }: { params: Promise<{ id: string, 
         }
     }, [lecture, activeItem]);
 
-    // 💡 2. سحر الـ Skeleton: بيعمل تخطيط وهمي مطابق لتصميم الصفحة وقت التحميل
+    // تخطيط الصفحة أثناء تحميل الداتا من الـ API
     if (isLoading || !activeItem) return (
         <main className="page-wrapper" style={{ paddingTop: '40px' }}>
             <div className="lecture-page-container">
@@ -45,7 +68,9 @@ export default function LectureRoom({ params }: { params: Promise<{ id: string, 
                 </div>
                 <div className="lecture-main-area" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <Skeleton variant="rectangular" height="400px" />
-                    <Skeleton variant="text" height="40px" width="60%" />
+                    <div style={{ marginBottom: '10px' }}>
+                        <Skeleton variant="text" height="40px" width="60%" />
+                    </div>
                     <Skeleton variant="text" height="20px" width="100%" />
                     <Skeleton variant="text" height="20px" width="80%" />
                 </div>
@@ -73,6 +98,7 @@ export default function LectureRoom({ params }: { params: Promise<{ id: string, 
                 {/* 2. مساحة العرض الرئيسية (يسار الشاشة) */}
                 <div className="lecture-main-area">
                     
+                    {/* 💡 VideoPlayer و LectureContent هيتحملوا دلوقتي بشكل كسول وبدون ضغط على الصفحة */}
                     {activeItem.type === 'video' && activeItem.status !== 'locked' ? (
                         <VideoPlayer activeItem={activeItem} studentName={lecture.studentName} />
                     ) : (
@@ -88,6 +114,7 @@ export default function LectureRoom({ params }: { params: Promise<{ id: string, 
                         </p>
                     </div>
 
+                    {/* 💡 الشات بيتحمل كمان Lazy Load */}
                     <LectureChat lang={lang} />
                     
                 </div>

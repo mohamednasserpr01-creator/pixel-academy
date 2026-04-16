@@ -1,5 +1,6 @@
 import './globals.css';
 import { AppProviders } from '../components/providers/AppProviders';
+import { ToastProvider } from '../context/ToastContext'; // 💡 1. استدعاء خيمة الإشعارات
 import Navbar from '../components/layout/Navbar'; 
 import Footer from '../components/layout/Footer';
 
@@ -19,24 +20,27 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <body>
-        {/* المُغلف الذكي يحيط بكل شيء لضمان وصول "الكهرباء" (الإعدادات) لكل المكونات */}
-        <AppProviders>
-          
-          {/* الناف بار يظهر ثابتاً في أعلى كل الصفحات */}
-          <Navbar />
-          
-          {/* تغليف المحتوى بكلاس الحماية لضمان عدم تداخله مع الناف بار */}
-          <div className="main-content-wrapper">
-            {children}
-          </div>
+        {/* 💡 2. تغليف المنصة بالكامل بالـ ToastProvider عشان الإشعارات تشتغل في كل الصفحات */}
+        <ToastProvider>
+          {/* المُغلف الذكي يحيط بكل شيء لضمان وصول "الكهرباء" (الإعدادات) لكل المكونات */}
+          <AppProviders>
+            
+            {/* الناف بار يظهر ثابتاً في أعلى كل الصفحات */}
+            <Navbar />
+            
+            {/* تغليف المحتوى بكلاس الحماية لضمان عدم تداخله مع الناف بار */}
+            <div className="main-content-wrapper">
+              {children}
+            </div>
 
-          {/* 💡 الشات بوت والواتساب سيعملان الآن في كل صفحات المنصة أوتوماتيكياً */}
-          <ChatBox />
-          
-          {/* الفوتر يظهر دائماً في أسفل الصفحة */}
-          <Footer />
+            {/* 💡 الشات بوت والواتساب سيعملان الآن في كل صفحات المنصة أوتوماتيكياً */}
+            <ChatBox />
+            
+            {/* الفوتر يظهر دائماً في أسفل الصفحة */}
+            <Footer />
 
-        </AppProviders>
+          </AppProviders>
+        </ToastProvider>
       </body>
     </html>
   );

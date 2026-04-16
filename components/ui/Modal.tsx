@@ -38,15 +38,13 @@ export const Modal: React.FC<ModalProps> = ({
             {/* e.stopPropagation() بتمنع الـ Modal يقفل لو دوست جواه، بيقفل بس لو دوست على الـ Overlay الأسود بره */}
             <div className="pixel-modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth }}>
                 
-                {/* الجزء العلوي (العنوان وزرار القفل) */}
-                {(title || onClose) && (
-                    <div className="pixel-modal-header">
-                        {title && <h3 className="pixel-modal-title">{title}</h3>}
-                        <button className="pixel-modal-close" onClick={onClose} aria-label="Close">
-                            <FaTimes />
-                        </button>
-                    </div>
-                )}
+                {/* 💡 شيلنا الشرط لأن onClose دايماً True، فهنعرض الـ Header بزرار الإغلاق دايماً */}
+                <div className="pixel-modal-header">
+                    {title && <h3 className="pixel-modal-title">{title}</h3>}
+                    <button className="pixel-modal-close" onClick={onClose} aria-label="Close">
+                        <FaTimes />
+                    </button>
+                </div>
 
                 {/* المحتوى الداخلي */}
                 <div className="pixel-modal-body">
