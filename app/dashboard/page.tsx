@@ -1,12 +1,19 @@
+// FILE: app/dashboard/page.tsx
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic'; 
+
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
 
-// 💡 1. استخدام المركز الموحد للإعدادات
 import { useSettings } from '../../context/SettingsContext'; 
-import { FaTimes } from 'react-icons/fa';
+import { useToast } from '../../context/ToastContext'; 
+
+// 💡 استدعاء الـ UI System الخارق بتاعنا
+import { Modal } from '../../components/ui/Modal';
+import { Button } from '../../components/ui/Button';
+import { Skeleton } from '../../components/ui/Skeleton';
+
 import './dashboard.css'; 
 
 export const TABS = {
@@ -20,10 +27,16 @@ export const TABS = {
     SETTINGS: 'settings'
 } as const;
 
-// 💡 غيرنا دي لـ string عشان الـ Sidebar ميشتكيش (حل الخطأ رقم 12)
 type TabValue = string; 
 
-const Loader = () => <div className="tab-pane active" style={{textAlign: 'center', padding: '50px', fontWeight: 'bold'}}>جاري التحميل... ⏳</div>;
+// 💡 وداعاً لكلمة "جاري التحميل"، أهلاً بالـ Skeleton الاحترافي!
+const Loader = () => (
+    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        <Skeleton variant="text" width="30%" height="30px" />
+        <Skeleton variant="rectangular" width="100%" height="200px" />
+        <Skeleton variant="rectangular" width="100%" height="150px" />
+    </div>
+);
 
 const OverviewTab = dynamic(() => import('../../components/dashboard/tabs/OverviewTab'), { loading: Loader });
 const CoursesTab = dynamic(() => import('../../components/dashboard/tabs/CoursesTab'), { loading: Loader });
@@ -49,6 +62,7 @@ const TAB_COMPONENTS: Record<string, React.ComponentType<any>> = {
 
 export default function DashboardPage() {
     const { theme, toggleMode, lang } = useSettings(); 
+    const { showToast } = useToast(); 
     
     const [activeTab, setActiveTab] = useState<TabValue>(TABS.OVERVIEW);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -71,12 +85,15 @@ export default function DashboardPage() {
             setCurrentAvatar(tempAvatar);
             localStorage.setItem('pixel_saved_avatar', tempAvatar);
             setIsAvatarModalOpen(false);
+            showToast(lang === 'ar' ? 'تم تحديث صورتك الشخصية بنجاح! 🎭' : 'Avatar updated successfully! 🎭', 'success');
+        } else {
+            // 💡 تم حل المشكلة وضبط التنسيق هنا
+            showToast(lang === 'ar' ? 'يرجى اختيار صورة أولاً' : 'Please select an avatar first', 'error');
         }
     };
 
-    const ActiveComponent = TAB_COMPONENTS[activeTab] || OverviewTab; // Fallback to prevent crashes
+    const ActiveComponent = TAB_COMPONENTS[activeTab] || OverviewTab; 
 
-    // 💡 حل الخطأ رقم 11: أضفنا (any) عشان الـ TypeScript ميعترضش إن الـ Header مش مستعد يستقبل lang
     const HeaderComponent: any = Header;
 
     return (
@@ -107,36 +124,38 @@ export default function DashboardPage() {
 
             <ChatBox />
 
-            <div className={`modal-overlay ${isAvatarModalOpen ? 'active' : ''}`} onClick={() => setIsAvatarModalOpen(false)} style={{ zIndex: 9999 }}>
-                <div className="modal-box" onClick={e => e.stopPropagation()} style={{ direction: lang === 'ar' ? 'rtl' : 'ltr', background: 'var(--card)', border: '1px solid rgba(108,92,231,0.2)' }}>
-                    
-                    <button className="close-modal-btn" onClick={() => setIsAvatarModalOpen(false)} style={{ left: lang === 'ar' ? '15px' : 'auto', right: lang === 'ar' ? 'auto' : '15px', color: '#e74c3c', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>
-                        <FaTimes />
-                    </button>
-                    
-                    <h2 style={{color:'var(--p-purple)', marginBottom:'10px', textAlign: 'center', fontWeight: '900'}}>
-                        {lang === 'ar' ? 'اختر هويتك الافتراضية 🎭' : 'Choose Your Avatar 🎭'}
-                    </h2>
-                    
-                    <h4 style={{textAlign: lang === 'ar' ? 'right' : 'left', color:'var(--success)', marginTop:'20px'}}>
+            <Modal 
+                isOpen={isAvatarModalOpen} 
+                onClose={() => setIsAvatarModalOpen(false)}
+                title={lang === 'ar' ? 'اختر هويتك الافتراضية 🎭' : 'Choose Your Avatar 🎭'}
+                maxWidth="650px"
+            >
+                <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+                    <h4 style={{ color: 'var(--success)', marginBottom: '15px' }}>
                         {lang === 'ar' ? 'قسم الأولاد 👨‍🎓' : 'Boys Section 👨‍🎓'}
                     </h4>
                     <div className="avatar-grid">
-                        {boysAvatars.map((url, i) => (<img key={`boy-${i}`} src={url} className={`avatar-option ${tempAvatar === url ? 'selected' : ''}`} onClick={() => setTempAvatar(url)} alt="boy avatar" />))}
+                        {boysAvatars.map((url, i) => (
+                            <img key={`boy-${i}`} src={url} className={`avatar-option ${tempAvatar === url ? 'selected' : ''}`} onClick={() => setTempAvatar(url)} alt="boy avatar" />
+                        ))}
                     </div>
                     
-                    <h4 style={{textAlign: lang === 'ar' ? 'right' : 'left', color:'#e84393', marginTop:'20px'}}>
+                    <h4 style={{ color: '#e84393', marginTop: '25px', marginBottom: '15px' }}>
                         {lang === 'ar' ? 'قسم البنات 👩‍🎓' : 'Girls Section 👩‍🎓'}
                     </h4>
                     <div className="avatar-grid">
-                        {girlsAvatars.map((url, i) => (<img key={`girl-${i}`} src={url} className={`avatar-option ${tempAvatar === url ? 'selected' : ''}`} onClick={() => setTempAvatar(url)} alt="girl avatar" />))}
+                        {girlsAvatars.map((url, i) => (
+                            <img key={`girl-${i}`} src={url} className={`avatar-option ${tempAvatar === url ? 'selected' : ''}`} onClick={() => setTempAvatar(url)} alt="girl avatar" />
+                        ))}
                     </div>
                     
-                    <button className="btn-resume glow-btn" style={{width:'100%', display: 'flex', justifyContent:'center', marginTop:'25px', fontSize:'1.1rem', padding: '12px', background: 'var(--p-purple)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold'}} onClick={saveNewAvatar}>
-                        {lang === 'ar' ? 'حفظ الصورة الجديدة' : 'Save New Avatar'}
-                    </button>
+                    <div style={{ marginTop: '30px' }}>
+                        <Button fullWidth size="lg" onClick={saveNewAvatar}>
+                            {lang === 'ar' ? 'حفظ الصورة الجديدة' : 'Save New Avatar'}
+                        </Button>
+                    </div>
                 </div>
-            </div>
+            </Modal>
         </div>
     );
 }

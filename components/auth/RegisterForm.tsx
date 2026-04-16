@@ -2,26 +2,32 @@
 "use client";
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FaUserPlus, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaUserPlus, FaEye, FaEyeSlash, FaUser, FaPhoneAlt, FaMapMarkerAlt, FaSchool, FaLock } from 'react-icons/fa';
 
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext'; // 💡 استدعاء الإشعارات
+import { Input } from '../ui/Input'; // 💡 استدعاء مكون الإدخال الذكي
+import { Button } from '../ui/Button'; // 💡 استدعاء مكون الزر الذكي
 
 interface Props {
     onSwitchView: () => void;
     onSuccess: () => void;
     onShowTerms: () => void;
     termsAccepted: boolean;
-    lang: string; // 💡 تم حل المشكلة: تم تعديل النوع إلى string عشان يقبل القيمة من صفحة الأوث
+    lang: string; 
 }
 
 export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, termsAccepted, lang }: Props) {
     const isAr = lang === 'ar';
     const { login } = useAuth();
+    const { showToast } = useToast();
     
     const [regData, setRegData] = useState({ name: '', phone: '', parent: '', gov: '', address: '', school: '', pass: '' });
     const [regErrors, setRegErrors] = useState({ name: '', phone: '', parent: '', school: '', pass: '' });
     const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); // 💡 حالة التحميل للزرار
 
+    // 💡 دوال التحقق نظيفة ومنفصلة
     const validateReg = (field: string, value: string) => {
         let errors = { ...regErrors };
         let isValid = true;
@@ -36,7 +42,8 @@ export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, ter
         }
         if (field === 'parent') {
             isValid = /^01[0125][0-9]{8}$/.test(value);
-            errors.parent = (!isValid && value) ? (isAr ? 'رقم غير صحيح' : 'Invalid number') : (isValid && value === regData.phone) ? (isAr ? 'لا يمكن أن يكون نفس رقم الطالب' : 'Cannot match student phone') : '';
+            errors.parent = (!isValid && value) ? (isAr ? 'رقم غير صحيح' : 'Invalid number') 
+                        : (isValid && value === regData.phone) ? (isAr ? 'لا يمكن أن يكون نفس رقم الطالب' : 'Cannot match student phone') : '';
         }
         if (field === 'pass') {
             isValid = value.length >= 6;
@@ -46,10 +53,9 @@ export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, ter
     };
 
     const handleRegChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { id, value } = e.target;
-        const key = id.replace('r-', '');
-        setRegData(prev => ({ ...prev, [key]: value }));
-        validateReg(key, value);
+        const { name, value } = e.target;
+        setRegData(prev => ({ ...prev, [name]: value }));
+        validateReg(name, value);
     };
 
     const isRegValid = () => {
@@ -62,17 +68,25 @@ export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, ter
         );
     };
 
-    const handleRegister = () => {
-        // 💡 تم حل المشكلة: إرسال الـ phone و الـ pass معاً للـ Context
-        login(regData.phone, regData.pass);
-        onSuccess();
+    const handleRegister = async () => {
+        setIsLoading(true);
+        try {
+            // محاكاة تأخير الشبكة عشان الـ Loader يشتغل بشكل احترافي
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            login(regData.phone, regData.pass);
+            showToast(isAr ? 'تم إنشاء الحساب بنجاح!' : 'Account created successfully!', 'success');
+            onSuccess();
+        } catch (error) {
+            showToast(isAr ? 'حدث خطأ أثناء إنشاء الحساب' : 'Error creating account', 'error');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const inputStyle = {
-        width: '100%', padding: '12px 15px', borderRadius: '10px', 
-        border: '2px solid rgba(108,92,231,0.2)', background: 'var(--bg)', 
-        color: 'var(--txt)', outline: 'none', fontSize: '0.95rem', transition: '0.3s'
-    };
+    // 💡 ترتيب العناصر باستخدام Flexbox نظيف جداً
+    const rowStyle = { display: 'flex', gap: '15px', flexWrap: 'wrap' as const };
+    const colStyle = { flex: '1 1 calc(50% - 10px)' };
 
     return (
         <motion.div key="register" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} dir={isAr ? 'rtl' : 'ltr'}>
@@ -81,62 +95,84 @@ export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, ter
             </h2>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <div style={{ width: '100%' }}>
-                    <input type="text" id="r-name" className={regErrors.name ? 'invalid' : ''} placeholder={isAr ? 'الاسم الرباعي (بالعربي)' : 'Full Name (Arabic)'} value={regData.name} onChange={handleRegChange} style={{ ...inputStyle, border: regErrors.name ? '2px solid #e74c3c' : inputStyle.border }} />
-                    {regErrors.name && <span className="err-hint" style={{ display: 'block', fontSize: '0.8rem', color: '#e74c3c', marginTop: '5px', fontWeight: 'bold' }}>{regErrors.name}</span>}
+                
+                {/* الاسم */}
+                <Input 
+                    type="text" name="name" 
+                    placeholder={isAr ? 'الاسم الرباعي (بالعربي)' : 'Full Name (Arabic)'} 
+                    value={regData.name} onChange={handleRegChange} 
+                    status={regErrors.name ? 'error' : 'default'} message={regErrors.name}
+                    icon={<FaUser />} inputSize="lg"
+                />
+
+                {/* أرقام الهواتف (صف واحد) */}
+                <div style={rowStyle}>
+                    <div style={colStyle}>
+                        <Input 
+                            type="tel" name="phone" 
+                            placeholder={isAr ? 'رقم الطالب' : 'Student Phone'} 
+                            value={regData.phone} onChange={handleRegChange} 
+                            status={regErrors.phone ? 'error' : 'default'} message={regErrors.phone}
+                            icon={<FaPhoneAlt />} inputSize="lg"
+                        />
+                    </div>
+                    <div style={colStyle}>
+                        <Input 
+                            type="tel" name="parent" 
+                            placeholder={isAr ? 'رقم ولي الأمر' : 'Parent Phone'} 
+                            value={regData.parent} onChange={handleRegChange} 
+                            status={regErrors.parent ? 'error' : 'default'} message={regErrors.parent}
+                            icon={<FaPhoneAlt />} inputSize="lg"
+                        />
+                    </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                    <div style={{ flex: '1 1 calc(50% - 10px)' }}>
-                        <input type="tel" id="r-phone" className={regErrors.phone ? 'invalid' : ''} placeholder={isAr ? 'رقم الطالب (واتساب)' : 'Student Phone'} value={regData.phone} onChange={handleRegChange} style={{ ...inputStyle, border: regErrors.phone ? '2px solid #e74c3c' : inputStyle.border }} />
-                        {regErrors.phone && <span className="err-hint" style={{ display: 'block', fontSize: '0.8rem', color: '#e74c3c', marginTop: '5px', fontWeight: 'bold' }}>{regErrors.phone}</span>}
-                    </div>
-                    <div style={{ flex: '1 1 calc(50% - 10px)' }}>
-                        <input type="tel" id="r-parent" className={regErrors.parent ? 'invalid' : ''} placeholder={isAr ? 'رقم ولي الأمر (واتساب)' : 'Parent Phone'} value={regData.parent} onChange={handleRegChange} style={{ ...inputStyle, border: regErrors.parent ? '2px solid #e74c3c' : inputStyle.border }} />
-                        {regErrors.parent && <span className="err-hint" style={{ display: 'block', fontSize: '0.8rem', color: '#e74c3c', marginTop: '5px', fontWeight: 'bold' }}>{regErrors.parent}</span>}
-                    </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                    <div style={{ flex: '1 1 calc(50% - 10px)' }}>
-                        <select id="r-gov" value={regData.gov} onChange={handleRegChange} style={{ ...inputStyle, cursor: 'pointer' }}>
-                            <option value="">{isAr ? 'المحافظة' : 'Governorate'}</option>
+                {/* المحافظة والمدرسة (صف واحد) */}
+                <div style={rowStyle}>
+                    <div style={colStyle} className="pixel-input-wrapper">
+                        {/* 💡 استخدام الـ CSS المخصص للـ Select عشان يبقى متطابق مع الـ Input */}
+                        <select name="gov" value={regData.gov} onChange={handleRegChange} className="pixel-input pixel-input-lg" style={{ cursor: 'pointer', color: regData.gov ? 'var(--txt)' : 'var(--txt-mut)' }}>
+                            <option value="" disabled>{isAr ? 'اختر المحافظة' : 'Select Governorate'}</option>
                             <option value="Cairo">{isAr ? 'القاهرة' : 'Cairo'}</option>
                             <option value="Giza">{isAr ? 'الجيزة' : 'Giza'}</option>
                             <option value="Alex">{isAr ? 'الإسكندرية' : 'Alexandria'}</option>
                         </select>
                     </div>
-                    <div style={{ flex: '1 1 calc(50% - 10px)' }}>
-                        <input type="text" id="r-school" placeholder={isAr ? 'المدرسة' : 'School'} value={regData.school} onChange={handleRegChange} style={inputStyle} />
-                    </div>
-                </div>
-
-                <div style={{ width: '100%' }}>
-                    <input type="text" id="r-address" placeholder={isAr ? 'العنوان بالتفصيل' : 'Detailed Address'} value={regData.address} onChange={handleRegChange} style={inputStyle} />
-                </div>
-
-                <div style={{ width: '100%' }}>
-                    <div style={{ position: 'relative', width: '100%' }}>
-                        <input 
-                            type={showPassword ? "text" : "password"} 
-                            id="r-pass" 
-                            className={regErrors.pass ? 'invalid' : ''} 
-                            placeholder={isAr ? 'الرقم السري (6 أرقام/حروف على الأقل)' : 'Password (Min 6 chars)'} 
-                            value={regData.pass} 
-                            onChange={e => { e.target.value = e.target.value.replace(/\s/g, ''); handleRegChange(e); }} 
-                            style={{ ...inputStyle, border: regErrors.pass ? '2px solid #e74c3c' : inputStyle.border }} 
+                    <div style={colStyle}>
+                        <Input 
+                            type="text" name="school" 
+                            placeholder={isAr ? 'المدرسة' : 'School'} 
+                            value={regData.school} onChange={handleRegChange} 
+                            icon={<FaSchool />} inputSize="lg"
                         />
-                        <div 
-                            onClick={() => setShowPassword(!showPassword)}
-                            style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: isAr ? '15px' : 'auto', right: isAr ? 'auto' : '15px', cursor: 'pointer', color: 'var(--p-purple)', fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}
-                        >
-                            {showPassword ? <FaEyeSlash /> : <FaEye />}
-                        </div>
                     </div>
-                    {regErrors.pass && <span className="err-hint" style={{ display: 'block', fontSize: '0.8rem', color: '#e74c3c', marginTop: '5px', fontWeight: 'bold' }}>{regErrors.pass}</span>}
                 </div>
+
+                {/* العنوان */}
+                <Input 
+                    type="text" name="address" 
+                    placeholder={isAr ? 'العنوان بالتفصيل' : 'Detailed Address'} 
+                    value={regData.address} onChange={handleRegChange} 
+                    icon={<FaMapMarkerAlt />} inputSize="lg"
+                />
+
+                {/* الرقم السري */}
+                <Input 
+                    type={showPassword ? "text" : "password"} name="pass" 
+                    placeholder={isAr ? 'الرقم السري (6 أرقام/حروف على الأقل)' : 'Password (Min 6 chars)'} 
+                    value={regData.pass} 
+                    onChange={e => { e.target.value = e.target.value.replace(/\s/g, ''); handleRegChange(e); }} 
+                    status={regErrors.pass ? 'error' : 'default'} message={regErrors.pass}
+                    inputSize="lg"
+                    icon={
+                        <div onClick={() => setShowPassword(!showPassword)} style={{ cursor: 'pointer', display: 'flex', color: 'var(--p-purple)' }}>
+                            {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                        </div>
+                    }
+                />
             </div>
             
+            {/* الشروط والأحكام */}
             <div style={{ margin: '20px 0', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem', color: 'var(--txt)' }}>
                 <input type="checkbox" readOnly checked={termsAccepted} onClick={onShowTerms} style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--p-purple)' }} /> 
                 <span>
@@ -147,23 +183,22 @@ export default function RegisterForm({ onSwitchView, onSuccess, onShowTerms, ter
                 </span>
             </div>
             
-            <button 
-                className="btn-submit glow-btn" 
-                disabled={!isRegValid()} 
+            {/* الزرار الذكي */}
+            <Button 
+                fullWidth size="lg" 
                 onClick={handleRegister} 
-                style={{ 
-                    width: '100%', background: isRegValid() ? 'var(--p-purple)' : 'var(--h-bg)', 
-                    color: isRegValid() ? '#fff' : 'var(--txt-mut)', border: 'none', padding: '15px', 
-                    borderRadius: '12px', fontWeight: 'bold', fontSize: '1.1rem', cursor: isRegValid() ? 'pointer' : 'not-allowed', 
-                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', transition: '0.3s' 
-                }}
+                disabled={!isRegValid()} 
+                isLoading={isLoading}
+                icon={!isLoading && <FaUserPlus />}
             >
-                {isAr ? 'إنشاء حساب' : 'Create Account'} <FaUserPlus style={{ margin: isAr ? '0 10px 0 0' : '0 0 0 10px' }} />
-            </button>
+                {isAr ? 'إنشاء حساب' : 'Create Account'}
+            </Button>
 
-            <div className="switch-link" style={{ textAlign: 'center', marginTop: '20px', color: 'var(--txt-mut)', fontSize: '0.95rem' }}>
+            <div style={{ textAlign: 'center', marginTop: '20px', color: 'var(--txt-mut)', fontSize: '0.95rem' }}>
                 {isAr ? 'لديك حساب؟ ' : 'Have an account? '} 
-                <span onClick={onSwitchView} style={{ color: 'var(--p-purple)', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}>{isAr ? 'دخول' : 'Login'}</span>
+                <span onClick={onSwitchView} style={{ color: 'var(--p-purple)', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}>
+                    {isAr ? 'دخول' : 'Login'}
+                </span>
             </div>
         </motion.div>
     );

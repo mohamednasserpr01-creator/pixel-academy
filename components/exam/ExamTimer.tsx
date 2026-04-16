@@ -1,4 +1,5 @@
 // FILE: components/exam/ExamTimer.tsx
+"use client";
 import React, { useState, useEffect } from 'react';
 import { FaHourglassHalf } from 'react-icons/fa';
 
@@ -25,8 +26,21 @@ export default function ExamTimer({ initialTimeLimit, onTimeUp }: Props) {
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     };
 
+    const isDanger = timeLeft < 60;
+
     return (
-        <div className={`timer ${timeLeft < 60 ? 'danger' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: timeLeft < 60 ? 'rgba(231, 76, 60, 0.1)' : 'var(--h-bg)', color: timeLeft < 60 ? '#e74c3c' : 'var(--warning)', padding: '10px 20px', borderRadius: '50px', fontWeight: 'bold', fontSize: '1.2rem' }}>
+        <div 
+            style={{ 
+                display: 'flex', alignItems: 'center', gap: '10px', 
+                background: isDanger ? 'rgba(231, 76, 60, 0.1)' : 'var(--h-bg)', 
+                color: isDanger ? '#e74c3c' : 'var(--warning)', 
+                padding: '10px 20px', borderRadius: '50px', 
+                fontWeight: 'bold', fontSize: '1.2rem',
+                transition: 'all 0.3s ease',
+                // 💡 لمسة Enterprise: التايمر بينبض لما الوقت يقل عن دقيقة
+                animation: isDanger ? 'pulse 1s infinite' : 'none' 
+            }}
+        >
             <FaHourglassHalf /> {formatTime(timeLeft)}
         </div>
     );

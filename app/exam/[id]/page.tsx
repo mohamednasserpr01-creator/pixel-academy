@@ -1,10 +1,11 @@
 // FILE: app/exam/[id]/page.tsx
 "use client";
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, use } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 // استدعاء الخدمات والإعدادات
 import { useSettings } from '../../../context/SettingsContext';
+import { useToast } from '../../../context/ToastContext'; 
 import { examService } from '../../../services/examService';
 
 // استدعاء المكونات اللي فصلناها
@@ -13,10 +14,17 @@ import ExamLive from '../../../components/exam/ExamLive';
 import ExamResult from '../../../components/exam/ExamResult';
 import ExamReview from '../../../components/exam/ExamReview';
 
+// استدعاء مكونات الـ UI System
+import { Skeleton } from '../../../components/ui/Skeleton';
+import { Modal } from '../../../components/ui/Modal';
+import { Button } from '../../../components/ui/Button';
+
 export default function ExamRoom({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params);
     const examId = resolvedParams.id;
     const { lang } = useSettings();
+    const { showToast } = useToast();
+    const isAr = lang === 'ar';
 
     // حالات الامتحان
     const [step, setStep] = useState<'intro' | 'live' | 'result' | 'review'>('intro');
@@ -24,34 +32,47 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
     const [answers, setAnswers] = useState<Record<number, any>>({});
     const [score, setScore] = useState(0);
 
+    // حالة مودال التأكيد
+    const [showSubmitModal, setShowSubmitModal] = useState(false);
+
     // سحب بيانات الامتحان بـ React Query
     const { data: exam, isLoading, isError } = useQuery({
         queryKey: ['exam', examId],
         queryFn: () => examService.getExam(examId),
     });
 
-    // دالة تسليم الامتحان (يدوي أو لو الوقت خلص)
-    const handleFinalSubmit = (isForceSubmit = false) => {
+    // دالة فتح مودال التسليم أو التسليم الإجباري
+    const handleFinalSubmitRequest = (isForceSubmit = false) => {
         if (!exam) return;
 
         if (!isForceSubmit) {
+            // التحقق من وجود أسئلة لم يتم الإجابة عليها
             const unanswered = exam.questions.some(q => {
                 const ans = answers[q.id];
                 return ans === undefined || ans === null || ans.toString().trim() === '';
             });
 
             if (unanswered) {
-                alert(lang === 'ar' ? '⚠️ برجاء الإجابة على جميع الأسئلة قبل التسليم!' : '⚠️ Please answer all questions before submitting!');
+                // 💡 تم التعديل إلى 'error' بدلاً من 'warning'
+                showToast(isAr ? '⚠️ يرجى الإجابة على جميع الأسئلة قبل التسليم!' : '⚠️ Please answer all questions before submitting!', 'error');
                 return;
             }
-            if (!window.confirm(lang === 'ar' ? 'هل أنت متأكد من تسليم الامتحان النهائي؟' : 'Are you sure you want to submit?')) return;
+            
+            setShowSubmitModal(true);
         } else {
-            alert(lang === 'ar' ? 'انتهى الوقت! تم سحب الورقة وتسليم الامتحان تلقائياً.' : 'Time is up! Exam submitted automatically.');
+            showToast(isAr ? 'انتهى الوقت! تم سحب الورقة تلقائياً.' : 'Time is up! Exam submitted automatically.', 'error');
+            executeFinalSubmit();
         }
+    };
 
-        // حساب الدرجة لأسئلة الـ MCQ فقط (المقالي بيتصحح من المدرس)
+    // دالة التسليم الفعلية وحساب الدرجة
+    const executeFinalSubmit = () => {
+        setShowSubmitModal(false);
+        if (!exam) return;
+
         let correctAnswers = 0;
         let totalMCQ = 0;
+        
         exam.questions.forEach(q => {
             if (q.type === 'mcq') {
                 totalMCQ++;
@@ -62,24 +83,35 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
         const finalScore = totalMCQ > 0 ? Math.round((correctAnswers / totalMCQ) * 100) : 100;
         setScore(finalScore);
         setStep('result');
+        showToast(isAr ? 'تم تسليم الامتحان بنجاح 🎓' : 'Exam submitted successfully 🎓', 'success');
     };
 
-    // شاشات التحميل والأخطاء
+    // 💡 تم حل مشكلة الـ style عن طريق تغليف الـ Skeleton في div
     if (isLoading || !exam) return (
-        <main className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-            <div style={{ width: '50px', height: '50px', border: '4px solid rgba(108,92,231,0.2)', borderTopColor: 'var(--p-purple)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+        <main className="page-wrapper" style={{ paddingTop: '50px' }}>
+            <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto', background: 'var(--card)', borderRadius: '20px', padding: '30px', border: '1px solid rgba(108,92,231,0.2)' }}>
+                <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
+                    <Skeleton variant="text" height="40px" width="50%" />
+                </div>
+                <div style={{ marginBottom: '20px' }}>
+                    <Skeleton variant="rectangular" height="200px" width="100%" />
+                </div>
+                <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+                    <Skeleton variant="rectangular" height="50px" width="150px" />
+                </div>
+            </div>
         </main>
     );
 
     if (isError) return (
         <main className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-            <h2 style={{ color: 'var(--danger)' }}>{lang === 'ar' ? 'حدث خطأ أثناء جلب بيانات الامتحان.' : 'Failed to load exam data.'}</h2>
+            <h2 style={{ color: 'var(--danger)' }}>{isAr ? 'حدث خطأ أثناء جلب بيانات الامتحان.' : 'Failed to load exam data.'}</h2>
         </main>
     );
 
-    // الريندر النهائي (Orchestrator)
     return (
         <main className="page-wrapper" style={{ paddingTop: '50px' }}>
+            
             <div className="exam-container" style={{ width: '100%', maxWidth: '800px', margin: '0 auto', background: 'var(--card)', borderRadius: '20px', padding: '30px', border: '1px solid rgba(108,92,231,0.2)', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}>
                 
                 {step === 'intro' && (
@@ -91,13 +123,13 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
                         exam={exam} 
                         lang={lang} 
                         currentQIndex={currentQIndex} 
-                        timeLeft={exam.timeLimit * 60} // مش بنستخدمه جوه Live بس بنمرره
+                        timeLeft={exam.timeLimit * 60} 
                         answers={answers} 
                         onAnswerChange={(qId, val) => setAnswers(prev => ({ ...prev, [qId]: val }))} 
                         onNext={() => setCurrentQIndex(prev => prev + 1)} 
                         onPrev={() => setCurrentQIndex(prev => prev - 1)} 
-                        onSubmit={() => handleFinalSubmit(false)} 
-                        onTimeUp={() => handleFinalSubmit(true)} 
+                        onSubmit={() => handleFinalSubmitRequest(false)} 
+                        onTimeUp={() => handleFinalSubmitRequest(true)} 
                         onNavigateTo={(idx) => setCurrentQIndex(idx)}
                     />
                 )}
@@ -111,6 +143,28 @@ export default function ExamRoom({ params }: { params: Promise<{ id: string }> }
                 )}
 
             </div>
+
+            <Modal 
+                isOpen={showSubmitModal} 
+                onClose={() => setShowSubmitModal(false)}
+                title={isAr ? 'تأكيد التسليم' : 'Confirm Submission'}
+                maxWidth="400px"
+            >
+                <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                    <p style={{ marginBottom: '25px', fontSize: '1.1rem', color: 'var(--txt)' }}>
+                        {isAr ? 'هل أنت متأكد من رغبتك في تسليم الامتحان؟ لا يمكن التراجع عن هذه الخطوة.' : 'Are you sure you want to submit the exam? This action cannot be undone.'}
+                    </p>
+                    <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+                        <Button variant="outline" onClick={() => setShowSubmitModal(false)}>
+                            {isAr ? 'تراجع' : 'Cancel'}
+                        </Button>
+                        <Button variant="primary" onClick={executeFinalSubmit}>
+                            {isAr ? 'نعم، قم بالتسليم' : 'Yes, Submit'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
         </main>
     );
 }
