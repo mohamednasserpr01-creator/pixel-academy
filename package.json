@@ -11,6 +11,8 @@
   "dependencies": {
     "@tanstack/react-query": "^5.99.0",
     "@tanstack/react-query-devtools": "^5.99.0",
+    "@types/canvas-confetti": "^1.9.0",
+    "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.38.0",
     "jose": "^6.2.2",
     "next": "16.2.3",

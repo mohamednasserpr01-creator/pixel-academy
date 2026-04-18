@@ -2,19 +2,17 @@
 "use client";
 import React, { useState, useEffect, use } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import dynamic from 'next/dynamic'; // 💡 1. استدعاء دالة التحميل الديناميكي
+import dynamic from 'next/dynamic';
 
+// 💡 تم تعديل كل المسارات هنا لـ 5 مستويات للخلف فقط لتطابق الشجرة الجديدة
 import { useSettings } from '../../../../../context/SettingsContext';
 import { lectureService } from '../../../../../services/lectureService';
 import { PlaylistItem } from '../../../../../types'; 
 
-// استدعاء المكونات الأساسية الخفيفة بشكل عادي (لأنها مسؤولة عن هيكل الصفحة)
 import LectureSidebar from '../../../../../components/lecture/LectureSidebar/LectureSidebar';
 import { Skeleton } from '../../../../../components/ui/Skeleton';
 import './LectureRoom.css';
 
-// 💡 2. Lazy Loading للمكونات الثقيلة 
-// ssr: false بتمنع السيرفر إنه يحاول يرندر الفيديو والشات (وده بيقلل الـ Bundle size جداً)
 const VideoPlayer = dynamic(
     () => import('../../../../../components/lecture/VideoPlayer/VideoPlayer'), 
     { 
@@ -59,7 +57,6 @@ export default function LectureRoom({ params }: { params: Promise<{ id: string, 
         }
     }, [lecture, activeItem]);
 
-    // تخطيط الصفحة أثناء تحميل الداتا من الـ API
     if (isLoading || !activeItem) return (
         <main className="page-wrapper" style={{ paddingTop: '40px' }}>
             <div className="lecture-page-container">
@@ -98,7 +95,6 @@ export default function LectureRoom({ params }: { params: Promise<{ id: string, 
                 {/* 2. مساحة العرض الرئيسية (يسار الشاشة) */}
                 <div className="lecture-main-area">
                     
-                    {/* 💡 VideoPlayer و LectureContent هيتحملوا دلوقتي بشكل كسول وبدون ضغط على الصفحة */}
                     {activeItem.type === 'video' && activeItem.status !== 'locked' ? (
                         <VideoPlayer activeItem={activeItem} studentName={lecture.studentName} />
                     ) : (
@@ -114,7 +110,6 @@ export default function LectureRoom({ params }: { params: Promise<{ id: string, 
                         </p>
                     </div>
 
-                    {/* 💡 الشات بيتحمل كمان Lazy Load */}
                     <LectureChat lang={lang} />
                     
                 </div>

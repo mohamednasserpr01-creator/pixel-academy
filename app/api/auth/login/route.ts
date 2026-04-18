@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
 
-// 💡 نفس السر اللي حطيناه في الـ Middleware
+// نفس السر اللي حطيناه في الـ Proxy
 const SECRET_KEY = new TextEncoder().encode(
     process.env.JWT_SECRET || 'pixel_academy_super_secret_key_2026'
 );
@@ -10,35 +10,37 @@ const SECRET_KEY = new TextEncoder().encode(
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { email, password } = body;
+        const { email, password } = body; // الواجهة هتبعت دول
 
-        // 💡 هنا بنتحقق من الداتا (مؤقتاً بنقبل أي حاجة لحد ما تربط بقاعدة البيانات)
+        // مؤقتاً بنقبل أي داتا لحد ما نربط بقاعدة البيانات
         if (email && password) {
             
             // 1. توليد التوكن الحقيقي المشفر (JWT)
             const token = await new SignJWT({ 
                 email, 
                 role: 'student',
-                userId: 'user_12345' // مجرد مثال
+                userId: 'user_12345' 
             })
                 .setProtectedHeader({ alg: 'HS256' })
                 .setIssuedAt()
-                .setExpirationTime('7d') // التوكن صالح لمدة 7 أيام
+                .setExpirationTime('7d') 
                 .sign(SECRET_KEY);
 
-            // 2. تجهيز الرد (Response) مع إرفاق الكوكي المشفرة
+            // 2. تجهيز الرد (Response) وإرسال التوكن للواجهة! 💡
             const response = NextResponse.json({ 
                 success: true, 
-                message: 'تم تسجيل الدخول بنجاح' 
+                message: 'تم تسجيل الدخول بنجاح',
+                token: token // 👈 التعديل الأهم: إرسال التوكن للفرونت إند
             });
             
+            // 3. زرع التوكن في الكوكيز
             response.cookies.set({
                 name: 'pixel_auth',
                 value: token,
-                httpOnly: true, // حماية من هجمات XSS
+                httpOnly: true, 
                 path: '/',
                 secure: process.env.NODE_ENV === 'production',
-                maxAge: 60 * 60 * 24 * 7 // 7 أيام بالثواني
+                maxAge: 60 * 60 * 24 * 7 
             });
 
             return response;

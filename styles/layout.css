@@ -4,7 +4,8 @@
 header { 
   position: fixed; top: 0; width: 100%; padding: 10px 3%; 
   display: flex; justify-content: space-between; align-items: center; 
-  z-index: 1000; backdrop-filter: blur(12px); border-bottom: 2px solid var(--p-purple);
+  /* 💡 تم التعديل: تقوية الناف بار ليكون فوق كل شيء دائمًا */
+  z-index: 9999; backdrop-filter: blur(12px); border-bottom: 2px solid var(--p-purple);
   background: var(--h-bg); box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
 }
 

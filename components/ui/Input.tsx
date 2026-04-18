@@ -1,5 +1,5 @@
 // FILE: components/ui/Input.tsx
-import React, { forwardRef, InputHTMLAttributes } from 'react';
+import React, { forwardRef, InputHTMLAttributes, useId } from 'react';
 import './ui.css';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -7,7 +7,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     status?: 'success' | 'warning' | 'error' | 'default';
     message?: string;
     icon?: React.ReactNode; 
-    inputSize?: 'sm' | 'md' | 'lg'; // 💡 سميناها inputSize عشان متعارضش مع size الأصلية في الـ HTML
+    inputSize?: 'sm' | 'md' | 'lg'; 
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(({ 
@@ -28,8 +28,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
     const sizeClass = inputSize !== 'md' ? `pixel-input-${inputSize}` : '';
     const iconClass = icon ? 'has-icon' : '';
 
-    // 💡 تأمين ID عشوائي لربط الـ message بالـ input للـ Accessibility
-    const inputId = id || `pixel-input-${Math.random().toString(36).substr(2, 9)}`;
+    // 💡 استخدام useId بدلاً من Math.random لمنع الـ Hydration Error
+    const generatedId = useId();
+    const inputId = id || `pixel-input-${generatedId}`;
     const msgId = `${inputId}-msg`;
 
     return (
@@ -38,12 +39,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
             
             <div className="pixel-input-inner">
                 <input 
-                    ref={ref} /* 💡 تفعيل الـ forwardRef بامتياز */
+                    ref={ref} 
                     id={inputId}
                     disabled={disabled}
                     className={`pixel-input ${statusClass} ${sizeClass} ${iconClass}`}
-                    aria-invalid={status === 'error'} /* 💡 Accessibility */
-                    aria-describedby={message ? msgId : undefined} /* 💡 Accessibility */
+                    aria-invalid={status === 'error'} 
+                    aria-describedby={message ? msgId : undefined} 
                     {...props}
                 />
                 {icon && (
@@ -58,5 +59,4 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
     );
 });
 
-// إجبار React إنه يتعرف على اسم المكون عشان الـ DevTools
 Input.displayName = 'Input';
