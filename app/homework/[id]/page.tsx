@@ -3,25 +3,20 @@
 import React, { useState, useEffect, use } from 'react';
 import { FaExclamationTriangle, FaStar, FaCheckDouble } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic'; // 💡 1. استدعاء التحميل الديناميكي
+import dynamic from 'next/dynamic';
 
 import { useSettings } from '../../../context/SettingsContext';
 import { homeworkService } from '../../../services/homeworkService';
-
-// 💡 2. استدعاء نظام الإشعارات والـ UI بتاعنا
 import { useToast } from '../../../context/ToastContext'; 
 import { Modal } from '../../../components/ui/Modal';
 import { Button } from '../../../components/ui/Button';
 import { Skeleton } from '../../../components/ui/Skeleton';
-
-// المكونات الخفيفة اللي هتحمل مع الصفحة
 import HomeworkProgress from '../../../components/homework/HomeworkProgress';
 
-// 💡 3. التحميل الكسول (Lazy Load) للمكونات الثقيلة
 const QuestionCard = dynamic(
     () => import('../../../components/homework/QuestionCard'),
     { 
-        ssr: false, // نمنع الريندر على السيرفر عشان الانيميشن
+        ssr: false, 
         loading: () => <div style={{ marginBottom: '20px' }}><Skeleton variant="rectangular" height="250px" width="100%" /></div>
     }
 );
@@ -41,7 +36,7 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
     const hwId = resolvedParams.id;
     const router = useRouter();
     const { lang } = useSettings();
-    const { showToast } = useToast(); // 💡 استخدام الـ Toast System الموحد
+    const { showToast } = useToast();
     const isAr = lang === 'ar';
 
     // States
@@ -63,21 +58,29 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
         setAnswers(prev => ({ ...prev, [qId]: val }));
     };
 
+    // التعديل العبقري لرفع الملفات (بيحافظ على النص المكتوب)
     const handleFileChange = (qId: string, file: File | null) => {
         setFiles(prev => ({ ...prev, [qId]: file }));
-        if(file) handleAnswerChange(qId, `[Attached: ${file.name}]`);
+        
+        if(file) {
+            setAnswers(prev => {
+                const currentAnswer = prev[qId] || '';
+                if (!currentAnswer.includes('[مرفق:')) {
+                    return { ...prev, [qId]: currentAnswer ? `${currentAnswer}\n[مرفق: ${file.name}]` : `[مرفق: ${file.name}]` };
+                }
+                return prev;
+            });
+        }
     };
 
     const saveProgress = () => {
         showToast(isAr ? 'تم حفظ تقدمك بنجاح! يمكنك العودة لاحقاً. 💾' : 'Progress saved successfully! 💾', 'success');
     };
 
-    // دالة طلب التسليم (بتفتح المودال بدل الـ confirm)
     const requestSubmit = () => {
         setShowSubmitModal(true);
     };
 
-    // دالة التسليم الفعلية
     const executeSubmit = () => {
         setShowSubmitModal(false);
         showToast(isAr ? 'جاري تصحيح الواجب... ⏳' : 'Grading homework... ⏳', 'info');
@@ -100,7 +103,6 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
         }, 1000);
     };
 
-    // 💡 استخدام الـ Skeleton الشيك وقت تحميل بيانات الواجب
     if (!hw) return (
         <main className="page-wrapper" style={{ paddingTop: '50px' }}>
             <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto', background: 'var(--card)', borderRadius: '20px', padding: '30px', border: '1px solid rgba(108,92,231,0.2)' }}>
@@ -119,8 +121,13 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
         </main>
     );
 
-    // Progress Calculation
-    const answeredCount = hw.questions.filter((q: any) => answers[q.id] && answers[q.id].toString().trim() !== '').length;
+    // حساب التقدم (بيقبل النص أو الصورة أو الاتنين)
+    const answeredCount = hw.questions.filter((q: any) => {
+        const hasText = answers[q.id] !== undefined && answers[q.id] !== null && answers[q.id].toString().trim() !== '';
+        const hasFile = files[q.id] !== undefined && files[q.id] !== null;
+        return hasText || hasFile;
+    }).length;
+
     const progressPercent = Math.round((answeredCount / hw.questions.length) * 100);
 
     return (
@@ -129,7 +136,6 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
                 
                 {step === 'live' && (
                     <div id="step-live">
-                        {/* Intro Header */}
                         <div className="hw-intro" style={{ marginBottom: '30px', textAlign: 'center' }}>
                             {hw.isMandatory && <span className="hw-badge" style={{ display: 'inline-block', background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', padding: '5px 15px', borderRadius: '50px', fontWeight: 'bold', marginBottom: '15px' }}><FaExclamationTriangle style={{ margin: '0 5px' }} /> {isAr ? 'واجب إجباري' : 'Mandatory'}</span>}
                             <h1 style={{ color: 'var(--p-purple)', marginBottom: '15px' }}>{isAr ? hw.titleAr : hw.titleEn}</h1>
@@ -139,10 +145,11 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
 
                         <HomeworkProgress 
                             answeredCount={answeredCount} totalCount={hw.questions.length} progressPercent={progressPercent} lang={lang}
-                            onBack={() => router.back()} onSave={saveProgress} onSubmit={requestSubmit}
+                            // 👇 التعديل هنا: استخدام router.push عشان يرجع لتراك الحصة بقوة
+                            onBack={() => router.push('/courses/1/lecture/1')} 
+                            onSave={saveProgress} onSubmit={requestSubmit}
                         />
 
-                        {/* 💡 المكون ده (الأسئلة) هيحمل Lazy Load ومش هيهنج الصفحة */}
                         <div className="questions-list">
                             {hw.questions.map((q: any, index: number) => (
                                 <QuestionCard 
@@ -170,7 +177,6 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
 
             </div>
 
-            {/* 💡 مودال التأكيد الاحترافي بدل الـ window.confirm */}
             <Modal 
                 isOpen={showSubmitModal} 
                 onClose={() => setShowSubmitModal(false)}
@@ -200,7 +206,6 @@ export default function HomeworkRoom({ params }: { params: Promise<{ id: string 
                     </div>
                 </div>
             </Modal>
-
         </main>
     );
 }
