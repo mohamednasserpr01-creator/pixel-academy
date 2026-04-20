@@ -150,3 +150,100 @@ export interface Service {
     descEn?: string;
     link?: string;
 }
+// FILE: types/store.ts
+
+export type ProductCategory = 'books' | 'tools';
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+export type ShippingStatus = 'pending' | 'processing' | 'packed' | 'shipped' | 'delivered' | 'returned';
+
+export interface Product {
+    id: string | number;
+    title: string;
+    price: number;
+    stock: number;
+    category: ProductCategory;
+    image: string;
+    status: 'متوفر' | 'غير متوفر';
+    // إضافات متقدمة للمستقبل (SKU, Barcode)
+    sku?: string;
+    barcode?: string;
+    weight?: number;
+}
+
+export interface OrderItem {
+    productId: string | number;
+    title: string;
+    qty: number;
+    price: number;
+}
+
+export interface OrderTimeline {
+    status: ShippingStatus | PaymentStatus;
+    date: string;
+    note?: string;
+}
+
+export interface Order {
+    id: string;
+    studentId?: string;
+    studentName: string;
+    phone: string;
+    address: string;
+    items: OrderItem[];
+    totalPrice: number;
+    
+    // نظام الحالات المفصول (كما طلبت)
+    paymentStatus: PaymentStatus;
+    shippingStatus: ShippingStatus;
+    
+    // 💡 حل مشكلة الخصم المزدوج من المخزن
+    inventoryUpdated: boolean; 
+    
+    date: string;
+    
+    // 💡 تتبع حالة الطلب مثل أمازون
+    timeline: OrderTimeline[]; 
+}
+
+// 💡 نظام حركات المخزن (Inventory Movements)
+export type MovementType = 'order' | 'restock' | 'refund' | 'adjustment';
+
+export interface InventoryMovement {
+    id: string;
+    productId: string | number;
+    type: MovementType;
+    qty: number; // (+) for restock/refund, (-) for orders
+    date: string;
+    note?: string;
+}
+// ==========================================
+// 💡 Support & Appointments Types
+// ==========================================
+export type SpecialistType = 'male' | 'female';
+export type AppointmentStatus = 'pending' | 'completed' | 'cancelled';
+
+export interface SupportSlot {
+    id: string; // 💡 ربط حقيقي مع الحجز
+    time: string;
+    isBooked: boolean;
+    appointmentId?: string; // 💡 عشان لو الحجز اتلغى، الـ Slot يفتح تاني
+}
+
+export interface SupportDay {
+    id: string;
+    day: string;
+    date: string; // ISO format: YYYY-MM-DD
+    slots: SupportSlot[];
+}
+
+export interface Appointment {
+    id: string;
+    studentName: string;
+    phone: string;
+    type: SpecialistType;
+    day: string;
+    date: string;
+    time: string;
+    slotId: string; // 💡 ربط عكسي مع الـ Slot
+    status: AppointmentStatus;
+}
