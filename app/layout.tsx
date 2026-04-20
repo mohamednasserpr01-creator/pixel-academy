@@ -1,11 +1,8 @@
+// FILE: app/layout.tsx
 import './globals.css';
 import { AppProviders } from '../components/providers/AppProviders';
-import { ToastProvider } from '../context/ToastContext'; // 💡 1. استدعاء خيمة الإشعارات
-import Navbar from '../components/layout/Navbar'; 
-import Footer from '../components/layout/Footer';
-
-// 💡 استعادة المكونات التفاعلية التي اختفت
-import ChatBox from '../components/chat/ChatBox'; 
+import { ToastProvider } from '../context/ToastContext'; 
+import PlatformUI from '../components/layout/PlatformUI'; // 💡 استدعاء المُغلف الذكي
 
 export const metadata = {
   title: 'Pixel Academy',
@@ -20,24 +17,13 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <body>
-        {/* 💡 2. تغليف المنصة بالكامل بالـ ToastProvider عشان الإشعارات تشتغل في كل الصفحات */}
         <ToastProvider>
-          {/* المُغلف الذكي يحيط بكل شيء لضمان وصول "الكهرباء" (الإعدادات) لكل المكونات */}
           <AppProviders>
             
-            {/* الناف بار يظهر ثابتاً في أعلى كل الصفحات */}
-            <Navbar />
-            
-            {/* تغليف المحتوى بكلاس الحماية لضمان عدم تداخله مع الناف بار */}
-            <div className="main-content-wrapper">
+            {/* 💡 المُغلف الذكي هو اللي هيقرر يعرض الهيدر والفوتر ولا يخفيهم */}
+            <PlatformUI>
               {children}
-            </div>
-
-            {/* 💡 الشات بوت والواتساب سيعملان الآن في كل صفحات المنصة أوتوماتيكياً */}
-            <ChatBox />
-            
-            {/* الفوتر يظهر دائماً في أسفل الصفحة */}
-            <Footer />
+            </PlatformUI>
 
           </AppProviders>
         </ToastProvider>

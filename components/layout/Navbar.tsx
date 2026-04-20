@@ -64,6 +64,9 @@ export default function Navbar() {
                         <li><Link href="/knowledge-bank" onClick={() => setIsMenuOpen(false)}><FaBookOpen /> {lang === 'ar' ? 'بنك الأسئلة' : 'Questions'}</Link></li>
                         <li><Link href="/library" onClick={() => setIsMenuOpen(false)}><FaFolderOpen /> {lang === 'ar' ? 'المكتبة' : 'Library'}</Link></li>
                         
+                        {/* 👇 التعديل هنا: إضافة بوابة ولي الأمر باللون الذهبي 👇 */}
+                        <li><Link href="/parent" onClick={() => setIsMenuOpen(false)} style={{ color: '#f39c12' }}><FaUserShield /> {lang === 'ar' ? 'متابعة ولي الأمر' : 'Parent Portal'}</Link></li>
+                        
                         {/* أزرار الموبايل (حسب حالة الدخول) */}
                         <li className="mobile-only" style={{ marginTop: '20px' }}>
                             {isLoggedIn ? (
