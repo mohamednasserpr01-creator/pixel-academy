@@ -247,3 +247,42 @@ export interface Appointment {
     slotId: string; // 💡 ربط عكسي مع الـ Slot
     status: AppointmentStatus;
 }
+// ==========================================
+// 💡 Teacher Dashboard Types (Decoupled Architecture)
+// ==========================================
+
+export interface TeacherLesson {
+    id: string;
+    title: string;
+    description: string;
+    videos: { id: string; title: string; url: string; order: number }[];
+    files: { id: string; title: string; url: string }[];
+    references: { id: string; title: string; url: string }[];
+    createdAt: string;
+}
+
+export interface TeacherExam {
+    id: string;
+    title: string;
+    durationMinutes: number;
+    passPercentage: number;
+    showScoreToStudent: boolean;
+    generateCertificate: boolean;
+    questionsCount: number;
+    createdAt: string;
+}
+
+export interface TeacherCourse {
+    id: string;
+    title: string;
+    description: string;
+    image: string;
+    isFree: boolean;
+    price: number;
+    requiresShippingCodes: boolean;
+    publishDate: string;
+    lessonsCount: number;
+    examsCount: number;
+    studentsCount: number;
+    createdAt: string;
+}

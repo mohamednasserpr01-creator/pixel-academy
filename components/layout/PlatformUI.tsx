@@ -9,10 +9,10 @@ import ChatBox from '../chat/ChatBox';
 export default function PlatformUI({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     
-    // 💡 لو اللينك بيبدأ بـ /admin هنخفي كل دوشة الطلاب
-    const isAdmin = pathname?.startsWith('/admin');
+    // 💡 لو اللينك بيبدأ بـ /admin أو /teacher هنخفي كل دوشة الطلاب
+    const isDashboardPanel = pathname?.startsWith('/admin') || pathname?.startsWith('/teacher');
 
-    if (isAdmin) {
+    if (isDashboardPanel) {
         return <>{children}</>;
     }
 
