@@ -30,11 +30,7 @@ export interface ExamRandomSettings {
     questionCount: number;
     shuffleQuestions: boolean;
     shuffleOptions: boolean;
-    difficultyDistribution: {
-        easy: number;
-        medium: number;
-        hard: number;
-    };
+    difficultyDistribution: { easy: number; medium: number; hard: number; };
 }
 
 export interface ExamState {
