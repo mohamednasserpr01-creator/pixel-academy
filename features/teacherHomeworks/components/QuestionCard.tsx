@@ -1,12 +1,11 @@
-// FILE: features/teacherExams/components/QuestionCard.tsx
 import React, { memo } from 'react';
 import { FaTrash, FaImage } from 'react-icons/fa';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Question, ExamLanguage } from '../types';
+import { Question, HomeworkLanguage } from '../types';
 import { useToast } from '@/context/ToastContext';
 
-interface Props { q: Question; index: number; language: ExamLanguage; dispatch: React.Dispatch<any>; }
+interface Props { q: Question; index: number; language: HomeworkLanguage; dispatch: React.Dispatch<any>; }
 
 const AR_LABELS = ['أ', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح'];
 const EN_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
@@ -29,7 +28,7 @@ export const QuestionCard = memo(({ q, index, language, dispatch }: Props) => {
         <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '15px', padding: '25px', marginBottom: '25px', position: 'relative' }}>
             <button onClick={() => dispatch({ type: 'DELETE_QUESTION', payload: q.id })} style={{ position: 'absolute', top: '15px', left: '15px', background: 'rgba(231,76,60,0.1)', color: 'var(--danger)', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', zIndex: 10 }}><FaTrash /></button>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
-                <span style={{ background: 'var(--p-purple)', color: 'white', padding: '5px 10px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 'bold' }}>سؤال {index + 1}</span>
+                <span style={{ background: '#f39c12', color: 'white', padding: '5px 10px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 'bold' }}>سؤال {index + 1}</span>
                 <h4 style={{ color: 'var(--txt)', margin: 0 }}>{q.type === 'mcq' ? 'اختياري' : q.type === 'tf' ? 'صح وخطأ' : 'مقالي'}</h4>
             </div>
             
@@ -40,7 +39,7 @@ export const QuestionCard = memo(({ q, index, language, dispatch }: Props) => {
             
             <div style={{ marginBottom: '20px' }}>
                 {!q.previewUrl ? (
-                    <label style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--p-purple)', border: '1px dashed rgba(255,255,255,0.1)', padding: '15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%' }}>
+                    <label style={{ background: 'rgba(255,255,255,0.02)', color: '#f39c12', border: '1px dashed rgba(255,255,255,0.1)', padding: '15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%' }}>
                         <FaImage size={20} /> إرفاق صورة للسؤال
                         <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleLocalImageUpload(e, (url) => updateQ('previewUrl', url))} />
                     </label>
@@ -58,14 +57,14 @@ export const QuestionCard = memo(({ q, index, language, dispatch }: Props) => {
                     <label style={{ display: 'block', color: 'var(--txt-mut)', marginBottom: '15px', fontWeight: 'bold' }}>الاختيارات (حدد الإجابة الصحيحة)</label>
                     {q.options?.map((opt, optIdx) => (
                         <div key={opt.id} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
-                            <input type="radio" name={`correct_${q.id}`} checked={opt.isCorrect} onChange={() => { const newOptions = q.options!.map(o => ({ ...o, isCorrect: o.id === opt.id })); updateQ('options', newOptions); }} style={{ width: '20px', height: '20px', accentColor: 'var(--p-purple)', cursor: 'pointer' }} />
+                            <input type="radio" name={`hw_correct_${q.id}`} checked={opt.isCorrect} onChange={() => { const newOptions = q.options!.map(o => ({ ...o, isCorrect: o.id === opt.id })); updateQ('options', newOptions); }} style={{ width: '20px', height: '20px', accentColor: '#f39c12', cursor: 'pointer' }} />
                             
                             <div style={{ flex: 1 }}>
                                 <input type="text" value={opt.text} onChange={(e) => { const newOptions = [...q.options!]; newOptions[optIdx].text = e.target.value; updateQ('options', newOptions); }} placeholder={`نص الاختيار`} style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px', outline: 'none', fontWeight: 'bold', fontSize: '1.1rem' }} />
                             </div>
                             
                             {!opt.previewUrl ? (
-                                <label style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--p-purple)', border: '1px dashed rgba(255,255,255,0.2)', padding: '12px', borderRadius: '8px', cursor: 'pointer', height: '42px', display: 'flex', alignItems: 'center' }}>
+                                <label style={{ background: 'rgba(255,255,255,0.05)', color: '#f39c12', border: '1px dashed rgba(255,255,255,0.2)', padding: '12px', borderRadius: '8px', cursor: 'pointer', height: '42px', display: 'flex', alignItems: 'center' }}>
                                     <FaImage size={18} />
                                     <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleLocalImageUpload(e, (url) => { const newOptions = [...q.options!]; newOptions[optIdx].previewUrl = url; updateQ('options', newOptions); })} />
                                 </label>

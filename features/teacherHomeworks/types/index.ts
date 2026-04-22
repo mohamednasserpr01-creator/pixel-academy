@@ -1,7 +1,7 @@
 export type QuestionType = 'mcq' | 'tf' | 'essay';
 export type EssayFormat = 'text' | 'image' | 'both';
 export type Difficulty = 'easy' | 'medium' | 'hard';
-export type ExamLanguage = 'ar' | 'en'; // 💡 نوع اللغة
+export type HomeworkLanguage = 'ar' | 'en';
 
 export interface Option {
     id: string; 
@@ -24,18 +24,10 @@ export interface Question {
     essayFormat?: EssayFormat; 
 }
 
-export interface ExamRandomSettings {
-    enabled: boolean;
-    questionCount: number;
-    shuffleQuestions: boolean;
-    shuffleOptions: boolean;
-    difficultyDistribution: { easy: number; medium: number; hard: number; };
-}
-
-export interface ExamState {
+export interface HomeworkState {
     title: string;
-    language: ExamLanguage; // 💡 لغة الامتحان
-    durationMinutes: number;
-    randomSettings: ExamRandomSettings;
+    language: HomeworkLanguage;
+    dueDate: string; // 💡 تاريخ ووقت التسليم النهائي
+    allowLateSubmission: boolean; // 💡 السماح للطلاب بحل الواجب بعد انتهاء الوقت
     questions: Question[];
 }
