@@ -11,8 +11,9 @@ export const useCurriculum = (initialState: Lecture[] = []) => {
         dispatch({ type: 'ADD_LECTURE', payload: { title } });
     }, []);
 
-    const updateLectureTitle = useCallback((lectureId: string, title: string) => {
-        dispatch({ type: 'UPDATE_LECTURE_TITLE', payload: { lectureId, title } });
+    // 🚀 التعديل هنا: الدالة بقت عامة وبتقبل أي تعديلات (updates) للمحاضرة
+    const updateLecture = useCallback((lectureId: string, updates: Partial<Lecture>) => {
+        dispatch({ type: 'UPDATE_LECTURE', payload: { lectureId, updates } });
     }, []);
 
     const removeLecture = useCallback((lectureId: string) => {
@@ -46,7 +47,7 @@ export const useCurriculum = (initialState: Lecture[] = []) => {
     return {
         curriculum,
         addLecture,
-        updateLectureTitle,
+        updateLecture, // 🚀 التعديل هنا في الإرجاع
         removeLecture,
         addItem,
         updateItem,

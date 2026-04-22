@@ -9,11 +9,11 @@ import {
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 
-// 🚀 الاستدعاءات بالـ Alias الاحترافي (@/features)
 import { useCurriculum } from '@/features/course-builder/hooks/useCurriculum';
 import { LectureCard } from '@/features/course-builder/components/LectureCard';
 import { ItemSettingsDrawer } from '@/features/course-builder/components/ItemSettingsDrawer';
 import { ContentPickerModal } from '@/features/course-builder/components/ContentPickerModal';
+import { PricingTab } from '@/features/course-builder/components/PricingTab'; // 🚀 استدعاء شاشة التسعير
 import { Lecture, LectureItem as LectureItemType } from '@/features/course-builder/types/curriculum.types';
 
 const initialData: Lecture[] = [
@@ -42,7 +42,7 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
     const [activeTab, setActiveTab] = useState<'curriculum' | 'pricing' | 'students' | 'notifications'>('curriculum');
     
     const { 
-        curriculum, addLecture, updateLectureTitle, 
+        curriculum, addLecture, updateLecture,
         addItem, updateItem, reorderItems, moveItemBetweenLectures 
     } = useCurriculum(initialData);
 
@@ -155,7 +155,7 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                                 <LectureCard 
                                     key={lecture.id} 
                                     lecture={lecture} 
-                                    onUpdateTitle={updateLectureTitle}
+                                    onUpdateLecture={updateLecture}
                                     onOpenContentPicker={(lecId: string) => setActiveLectureId(lecId)}
                                     onOpenSettings={(item: LectureItemType) => setSettingsItem({ lectureId: lecture.id, item })}
                                 />
@@ -164,7 +164,9 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                     </div>
                 )}
 
-                {activeTab === 'pricing' && <div style={{ color: 'var(--txt-mut)', textAlign: 'center', padding: '50px' }}>شاشة إعدادات التسعير (قيد الإنشاء)</div>}
+                {/* 🚀 تم استبدال الجملة القديمة بشاشة التسعير الاحترافية */}
+                {activeTab === 'pricing' && <PricingTab curriculum={curriculum} />}
+                
                 {activeTab === 'students' && <div style={{ color: 'var(--txt-mut)', textAlign: 'center', padding: '50px' }}>جدول الطلاب وإحصائيات الـ Drop-off (قيد الإنشاء)</div>}
                 {activeTab === 'notifications' && <div style={{ color: 'var(--txt-mut)', textAlign: 'center', padding: '50px' }}>محرك إشعارات الواتساب (قيد الإنشاء)</div>}
             </div>

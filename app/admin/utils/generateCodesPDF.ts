@@ -1,4 +1,4 @@
-// FILE: utils/generateCodesPDF.ts
+// FILE: app/admin/utils/generateCodesPDF.ts
 import { jsPDF } from "jspdf";
 import { customAlphabet } from "nanoid";
 
@@ -82,24 +82,16 @@ export async function generateCodesPDF({ count, price, color, background, title,
 
         drawImageContain(doc, background, x, y, cardWidth, cardHeight);
 
-        // 💡 تظبيط الإحداثيات بالنسبة المئوية لتتطابق مع تصميم مس بهيرة
-
-        // 1. السعر (أعلى اليسار)
         doc.setFontSize(12);
         doc.setTextColor(0, 0, 0); 
-        // 13% من العرض و 17% من الطول
         doc.text(c.price.toString(), x + (cardWidth * 0.13), y + (cardHeight * 0.17), { align: "center" });
 
-        // 2. السيريال (في المنتصف داخل المربع الصغير)
         doc.setFontSize(9);
         doc.setTextColor(0, 0, 0);
-        // 49% من العرض و 67% من الطول
         doc.text(`${c.serial}`, x + (cardWidth * 0.49), y + (cardHeight * 0.67), { align: "center" });
 
-        // 3. الكود (في المستطيل الأبيض بالأسفل)
         doc.setFontSize(11);
         doc.setTextColor(rgb.r, rgb.g, rgb.b); 
-        // 49% من العرض و 82% من الطول
         doc.text(c.code, x + (cardWidth * 0.49), y + (cardHeight * 0.82), { align: "center" });
     }
 

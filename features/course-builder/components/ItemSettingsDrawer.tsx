@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { FaCog, FaTimes, FaLock, FaEye, FaCertificate } from 'react-icons/fa';
+import { FaCog, FaTimes, FaLock, FaEye, FaCertificate, FaUserSecret } from 'react-icons/fa';
 import { Lecture, LectureItem } from '../types/curriculum.types';
 import { CustomSelect } from './CustomSelect';
 
@@ -13,15 +13,21 @@ interface Props {
 }
 
 export const ItemSettingsDrawer: React.FC<Props> = ({ isOpen, onClose, item, curriculum, onSave }) => {
-    // 💡 استخدام حالة محلية (Local State) عشان نعدل براحتنا قبل ما ندوس حفظ
     const [prereqType, setPrereqType] = useState('none');
     const [selectedExam, setSelectedExam] = useState('');
     const [selectedHw, setSelectedHw] = useState('');
     const [altExam, setAltExam] = useState('none');
     const [viewsLimit, setViewsLimit] = useState(3);
     const [passScore, setPassScore] = useState(50);
+    
+    // إعدادات الامتحانات
+    const [issueCertificate, setIssueCertificate] = useState(false);
+    const [certificateMinScore, setCertificateMinScore] = useState(80);
+    const [requireRetake, setRequireRetake] = useState(false);
+    const [retakeThreshold, setRetakeThreshold] = useState(50);
+    const [showAnswers, setShowAnswers] = useState(false);
+    const [isRetakeOnly, setIsRetakeOnly] = useState(false); // 🚀 الـ State الجديدة
 
-    // تحديث الحالة لما نفتح عنصر جديد
     useEffect(() => {
         if (item) {
             setPrereqType(item.prerequisite?.type || 'none');
@@ -30,6 +36,13 @@ export const ItemSettingsDrawer: React.FC<Props> = ({ isOpen, onClose, item, cur
             setAltExam(item.altExamId || 'none');
             setViewsLimit(item.viewsLimit || 3);
             setPassScore(item.passScore || 50);
+            
+            setIssueCertificate(item.issueCertificate || false);
+            setCertificateMinScore(item.certificateMinScore || 80);
+            setRequireRetake(item.requireRetake || false);
+            setRetakeThreshold(item.retakeThreshold || 50);
+            setShowAnswers(item.showAnswers || false);
+            setIsRetakeOnly(item.isRetakeOnly || false); // 🚀 قراءة القيمة المحفوظة
         }
     }, [item]);
 
@@ -42,7 +55,13 @@ export const ItemSettingsDrawer: React.FC<Props> = ({ isOpen, onClose, item, cur
         onSave(item.id, {
             viewsLimit,
             passScore,
-            altExamId: altExam === 'none' ? undefined : altExam,
+            altExamId: requireRetake && altExam !== 'none' ? altExam : undefined,
+            issueCertificate,
+            certificateMinScore: issueCertificate ? certificateMinScore : undefined,
+            requireRetake,
+            retakeThreshold: requireRetake ? retakeThreshold : undefined,
+            showAnswers,
+            isRetakeOnly, // 🚀 حفظ القيمة
             prerequisite: {
                 type: prereqType as any,
                 targetId: prereqType === 'specific_exam' ? selectedExam : prereqType === 'specific_hw' ? selectedHw : undefined
@@ -97,6 +116,55 @@ export const ItemSettingsDrawer: React.FC<Props> = ({ isOpen, onClose, item, cur
                         <div style={{ background: 'rgba(0,0,0,0.2)', padding: '15px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.02)' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', marginBottom: '10px', fontSize: '0.95rem' }}><FaEye color="#3498db"/> عدد المشاهدات المسموحة</label>
                             <input type="number" value={viewsLimit} onChange={(e) => setViewsLimit(Number(e.target.value))} style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px', outline: 'none' }} />
+                        </div>
+                    )}
+
+                    {/* إعدادات الامتحانات */}
+                    {item.type === 'exam' && (
+                        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '15px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.02)' }}>
+                            <h4 style={{ color: 'white', margin: '0 0 15px 0', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px' }}><FaCertificate color="#f1c40f"/> إعدادات الامتحان الخاصة</h4>
+                            
+                            {/* 🚀 إعداد إخفاء الامتحان (مخصص للإعادة فقط) */}
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#e67e22', cursor: 'pointer', marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                <input type="checkbox" checked={isRetakeOnly} onChange={(e) => setIsRetakeOnly(e.target.checked)} style={{ accentColor: '#e67e22', width: '16px', height: '16px' }} />
+                                <span style={{ flex: 1 }}>تخصيص هذا الامتحان للإعادة فقط (يُخفى عن الطالب افتراضياً)</span>
+                                <FaUserSecret size={18} />
+                            </label>
+
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'white', cursor: 'pointer', marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                <input type="checkbox" checked={showAnswers} onChange={(e) => setShowAnswers(e.target.checked)} style={{ accentColor: 'var(--p-purple)', width: '16px', height: '16px' }} />
+                                السماح للطالب بمراجعة الإجابات الصحيحة بعد التسليم
+                            </label>
+
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--txt-mut)', cursor: 'pointer', marginBottom: '10px' }}>
+                                <input type="checkbox" checked={issueCertificate} onChange={(e) => setIssueCertificate(e.target.checked)} />
+                                إصدار شهادة تقدير للطالب
+                            </label>
+                            {issueCertificate && (
+                                <div style={{ marginBottom: '15px', paddingRight: '25px', animation: 'fadeIn 0.2s ease' }}>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--txt-mut)', display: 'block', marginBottom: '5px' }}>الدرجة المطلوبة للشهادة (%):</span>
+                                    <input type="number" value={certificateMinScore} onChange={(e) => setCertificateMinScore(Number(e.target.value))} style={{ width: '100%', padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '5px', outline: 'none' }} />
+                                </div>
+                            )}
+
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--txt-mut)', cursor: 'pointer', marginBottom: '10px', marginTop: '15px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '15px' }}>
+                                <input type="checkbox" checked={requireRetake} onChange={(e) => setRequireRetake(e.target.checked)} disabled={isRetakeOnly} />
+                                تفعيل امتحان إعادة (للامتحانات الأساسية)
+                            </label>
+                            {requireRetake && !isRetakeOnly && (
+                                <div style={{ paddingRight: '25px', animation: 'fadeIn 0.2s ease' }}>
+                                    <div style={{ marginBottom: '10px' }}>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--txt-mut)', display: 'block', marginBottom: '5px' }}>يُسمح بدخول الإعادة لمن حصل على أقل من (%):</span>
+                                        <input type="number" value={retakeThreshold} onChange={(e) => setRetakeThreshold(Number(e.target.value))} style={{ width: '100%', padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '5px', outline: 'none' }} />
+                                    </div>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--txt-mut)', display: 'block', marginBottom: '5px' }}>اختر امتحان الإعادة المرتبط:</span>
+                                    <CustomSelect 
+                                        value={altExam} onChange={setAltExam} 
+                                        // 💡 بنفلتر الامتحانات عشان نعرض الامتحانات المخصصة للإعادة فقط
+                                        options={[{ value: 'none', label: 'اختر امتحان...' }, ...courseExams.filter(ex => ex.id !== item.id).map(ex => ({ value: ex.id, label: ex.title + (ex.isRetakeOnly ? ' (مخصص للإعادة)' : '') }))]} 
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
 
