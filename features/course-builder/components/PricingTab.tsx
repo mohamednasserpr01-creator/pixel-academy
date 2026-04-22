@@ -1,82 +1,24 @@
 "use client";
-import React, { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import React from 'react';
 import { FaMoneyBillWave, FaPercentage, FaUnlockAlt, FaCheckCircle, FaBarcode, FaPrint, FaImage, FaPalette, FaTrash } from 'react-icons/fa';
 import { Lecture } from '../types/curriculum.types';
-// 💡 التعديل هنا: استدعاء دالة التوليد الجديدة (بدون PDF)
-import { generateCodesData } from '@/app/admin/utils/generateCodesLocal'; 
+import { usePricing } from '../hooks/usePricing'; // 💡 الاستدعاء من الـ Hook
 
 interface Props {
     curriculum: Lecture[];
 }
 
 export const PricingTab: React.FC<Props> = ({ curriculum }) => {
-    const [isFree, setIsFree] = useState(false);
-    const [coursePrice, setCoursePrice] = useState(500);
-    const [hasDiscount, setHasDiscount] = useState(false);
-    const [discountPrice, setDiscountPrice] = useState(350);
-    const [allowPartialPurchase, setAllowPartialPurchase] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'custom_codes' | 'both'>('both');
-    const [lecturePrices, setLecturePrices] = useState<Record<string, number>>({});
-
-    // 🚀 States محرك توليد الأكواد المخصصة
-    const [showCodeGenerator, setShowCodeGenerator] = useState(false);
-    const [codeCount, setCodeCount] = useState(50);
-    const [codeTextColor, setCodeTextColor] = useState('#000000');
-    const [codePriceLabel, setCodePriceLabel] = useState(coursePrice);
-    
-    // تحديد هدف الكود (كورس كامل ولا محاضرة معينة)
-    const [codeTarget, setCodeTarget] = useState<string>('full_course'); 
-    
-    // رفع الصورة
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [bgImageBase64, setBgImageBase64] = useState<string | null>(null);
-
-    const handleLecturePriceChange = (lectureId: string, price: number) => {
-        setLecturePrices(prev => ({ ...prev, [lectureId]: price }));
-    };
-
-    // معالجة رفع الصورة وتحويلها لـ Base64
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                setBgImageBase64(event.target?.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    // 🚀 معالجة التوليد (النظام الجديد)
-    const handleGenerateCourseCodes = () => {
-        if (!bgImageBase64) {
-            alert("يرجى رفع صورة خلفية الكارت أولاً!");
-            return;
-        }
-
-        alert("جاري تجهيز الأكواد وفتح شاشة الطباعة... 🖨️");
-        
-        try {
-            // توليد الداتا (أرقام فقط زي ما اتفقنا)
-            const codesData = generateCodesData(codeCount, codePriceLabel);
-
-            // تجهيز الباكدج اللي هتبعتها لصفحة الطباعة
-            const printPayload = {
-                background: bgImageBase64,
-                color: codeTextColor,
-                codes: codesData
-            };
-
-            // حفظها في المتصفح وفتح صفحة الطباعة في تاب جديد
-            localStorage.setItem('print_codes_data', JSON.stringify(printPayload));
-            window.open('/admin/print-codes', '_blank');
-            
-        } catch (error) {
-            console.error("Error generating print data:", error);
-            alert("حدث خطأ أثناء التجهيز للطباعة.");
-        }
-    };
+    // 🚀 سحب كل حاجة من الـ Hook
+    const {
+        isFree, setIsFree, coursePrice, setCoursePrice, hasDiscount, setHasDiscount,
+        discountPrice, setDiscountPrice, allowPartialPurchase, setAllowPartialPurchase,
+        paymentMethod, setPaymentMethod, lecturePrices, handleLecturePriceChange,
+        showCodeGenerator, setShowCodeGenerator, codeCount, setCodeCount,
+        codeTextColor, setCodeTextColor, codePriceLabel, setCodePriceLabel,
+        codeTarget, setCodeTarget, fileInputRef, bgImageBase64, handleImageUpload, setBgImageBase64,
+        handleGenerateCourseCodes, isGenerating
+    } = usePricing(500);
 
     return (
         <div style={{ animation: 'fadeIn 0.4s ease', display: 'flex', flexDirection: 'column', gap: '30px' }}>
@@ -172,7 +114,6 @@ export const PricingTab: React.FC<Props> = ({ curriculum }) => {
                                 {showCodeGenerator && (
                                     <div style={{ animation: 'fadeIn 0.3s ease', display: 'flex', flexDirection: 'column', gap: '15px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '20px' }}>
                                         
-                                        {/* ماذا يفتح هذا الكود */}
                                         <div>
                                             <label style={{ display: 'block', color: 'var(--txt-mut)', fontSize: '0.8rem', marginBottom: '5px' }}>ماذا يفتح هذا الكود؟</label>
                                             <select value={codeTarget} onChange={(e) => {
@@ -202,13 +143,11 @@ export const PricingTab: React.FC<Props> = ({ curriculum }) => {
                                             </div>
                                         </div>
 
-                                        {/* رفع ومعاينة الصورة */}
                                         <div 
                                             onClick={() => fileInputRef.current?.click()} 
                                             style={{ padding: bgImageBase64 ? '0' : '20px', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.2)', borderRadius: '8px', textAlign: 'center', cursor: 'pointer', position: 'relative', overflow: 'hidden', height: bgImageBase64 ? '150px' : 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}
                                         >
                                             <input type="file" ref={fileInputRef} accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
-                                            
                                             {bgImageBase64 ? (
                                                 <>
                                                     <img src={bgImageBase64} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -217,13 +156,18 @@ export const PricingTab: React.FC<Props> = ({ curriculum }) => {
                                             ) : (
                                                 <>
                                                     <FaImage size={24} color="var(--txt-mut)" style={{ marginBottom: '10px' }} />
-                                                    <div style={{ color: 'var(--txt-mut)', fontSize: '0.9rem' }}>اضغط لرفع صورة خلفية الكارت (يفضل أبعاد 21:10)</div>
+                                                    <div style={{ color: 'var(--txt-mut)', fontSize: '0.9rem' }}>اضغط لرفع صورة خلفية الكارت (أبعاد 21:10)</div>
                                                 </>
                                             )}
                                         </div>
 
-                                        <button onClick={handleGenerateCourseCodes} style={{ background: '#2ecc71', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '10px' }}>
-                                            <FaPrint /> توليد وطباعة الأكواد 🖨️
+                                        {/* 🚀 زرار التوليد مربوط بحالة التحميل */}
+                                        <button 
+                                            onClick={handleGenerateCourseCodes} 
+                                            disabled={isGenerating}
+                                            style={{ background: isGenerating ? 'gray' : '#2ecc71', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', cursor: isGenerating ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '10px' }}
+                                        >
+                                            <FaPrint /> {isGenerating ? 'جاري تسجيل الأكواد...' : 'تسجيل الأكواد وطباعة الشيت 🖨️'}
                                         </button>
                                     </div>
                                 )}

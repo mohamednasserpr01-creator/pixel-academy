@@ -1,6 +1,6 @@
 import { customAlphabet } from "nanoid";
 
-// 💡 10 أرقام فقط (بدون أي حروف)
+// 16 رقم فقط (بدون أي حروف)
 const nano = customAlphabet('0123456789', 16);
 
 export function generateCodesData(count: number, price: number | string, startSerial: number = 84027) {
@@ -8,7 +8,7 @@ export function generateCodesData(count: number, price: number | string, startSe
     for (let i = 0; i < count; i++) {
         codes.push({
             serial: (startSerial + i).toString(),
-            code: nano(), // 16 رقم بدون فواصل
+            code: nano(),
             price: price.toString()
         });
     }

@@ -5,7 +5,7 @@ export default function PrintCodesPage() {
     const [data, setData] = useState<any>(null);
 
     useEffect(() => {
-        // قراءة الداتا من المتصفح
+        // قراءة الداتا من المتصفح اللي بعتتها شاشة التسعير
         const stored = localStorage.getItem('print_codes_data');
         if (stored) {
             setData(JSON.parse(stored));
@@ -16,65 +16,109 @@ export default function PrintCodesPage() {
         }
     }, []);
 
-    if (!data) return <div style={{ padding: '50px', textAlign: 'center', fontSize: '2rem' }}>جاري التجهيز للطباعة... 🖨️</div>;
-
-    // تقسيم الأكواد لمصفوفات كل مصفوفة فيها 27 كود (صفحة واحدة)
-    const pages = [];
-    for (let i = 0; i < data.codes.length; i += 27) {
-        pages.push(data.codes.slice(i, i + 27));
-    }
+    if (!data) return <div style={{ padding: '50px', textAlign: 'center', fontSize: '2rem', direction: 'rtl' }}>جاري التجهيز للطباعة... 🖨️</div>;
 
     return (
-        <>
-            {/* 💡 CSS مخصص للطباعة فقط (A4 Size) */}
+        <div id="print-area">
+            {/* 🚀 السحر هنا: استخدام نفس كود الـ C# القديم بتاعك بالظبط مع حماية الطباعة */}
             <style dangerouslySetInnerHTML={{__html: `
-                @page { size: A4 portrait; margin: 0; }
-                body { margin: 0; padding: 0; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                
-                /* مقاس صفحة الـ A4 بالمللي */
-                .page-sheet { 
-                    width: 210mm; 
-                    height: 297mm; 
-                    page-break-after: always; 
-                    display: grid; 
-                    grid-template-columns: repeat(3, 1fr); 
-                    grid-template-rows: repeat(9, 1fr); 
-                    gap: 0; 
-                    overflow: hidden; 
+                @import url('https://fonts.googleapis.com/css2?family=Russo+One&display=swap');
+
+                /* 💡 إخفاء كل السايد بار والناف بار وقت الطباعة وتوسيع الشاشة بالكامل للكروت */
+                @media print {
+                    body * {
+                        visibility: hidden;
+                    }
+                    #print-area, #print-area * {
+                        visibility: visible;
+                    }
+                    #print-area {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                    }
+                    /* 💡 نفس المارجن المخصص اللي إنت بتعمله في جوجل كروم بالمللي! */
+                    @page {
+                        size: A4 portrait;
+                        margin-top: 4.5mm;
+                        margin-bottom: 4mm;
+                        margin-left: 10mm;
+                        margin-right: 10mm;
+                    }
+                    ::-webkit-scrollbar { display: none; }
                 }
-                
-                .code-card { 
-                    position: relative; 
-                    width: 100%; 
-                    height: 100%; 
-                    background-image: url('${data.background}'); 
-                    background-size: 100% 100%; 
-                    background-repeat: no-repeat; 
-                    color: black; 
-                    font-family: sans-serif; 
+
+                *, *::before, *::after {
+                    padding: 0;
+                    margin: 0;
+                    box-sizing: border-box;
                 }
-                
-                /* 💡 الإحداثيات مطابقة لكود الـ C# القديم بتاعك */
-                .price-tag { position: absolute; top: 6%; left: 11%; font-size: 12px; font-weight: 900; }
-                .serial-tag { position: absolute; bottom: 23%; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 900; letter-spacing: 1px; }
-                .secret-code { position: absolute; bottom: 5%; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: 900; letter-spacing: 1px; color: ${data.color}; }
-                
-                /* إخفاء أي حاجة تانية في الموقع وقت الطباعة */
-                header, footer, .sidebar, .fab-container { display: none !important; }
+
+                body {
+                    background: white;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+
+                /* 💡 نفس الـ Grid بتاعك بالمللي */
+                .grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 10px;
+                }
+
+                .card {
+                    background-image: url('${data.background}');
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    background-size: cover;
+                    aspect-ratio: 21 / 10;
+                    color: ${data.color || 'black'};
+                    position: relative;
+                    font-family: 'Russo One', sans-serif;
+                    page-break-inside: avoid;
+                }
+
+                .price {
+                    position: absolute;
+                    top: 6%;
+                    left: 11%;
+                    font-size: 10px;
+                    font-weight: bold;
+                    color: black;
+                }
+
+                .index {
+                    position: absolute;
+                    bottom: 25%;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    font-size: 10px;
+                    font-weight: bold;
+                    color: black;
+                }
+
+                .code {
+                    position: absolute;
+                    bottom: 5%;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    font-size: 14px;
+                    font-weight: bold;
+                    letter-spacing: 1px;
+                }
             `}} />
 
-            {/* رسم الصفحات */}
-            {pages.map((pageCodes, pIdx) => (
-                <div key={pIdx} className="page-sheet">
-                    {pageCodes.map((c: any, i: number) => (
-                        <div key={i} className="code-card">
-                            <div className="price-tag">{c.price}</div>
-                            <div className="serial-tag">{c.serial}</div>
-                            <div className="secret-code">{c.code}</div>
-                        </div>
-                    ))}
-                </div>
-            ))}
-        </>
+            <div className="grid">
+                {data.codes.map((c: any, i: number) => (
+                    <div key={i} className="card">
+                        <p className="price">{c.price}</p>
+                        <p className="index">{c.serial}</p>
+                        <p className="code">{c.code}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
     );
 }
