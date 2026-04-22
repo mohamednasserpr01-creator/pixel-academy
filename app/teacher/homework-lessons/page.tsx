@@ -4,22 +4,18 @@ import { useRouter } from 'next/navigation';
 import { FaPlus, FaSearch, FaBook, FaEdit, FaTrash } from 'react-icons/fa';
 import { Button } from '@/components/ui/Button';
 
+// 💡 استدعاء الـ Modal اللي لسه عاملينه
+import CreateHomeworkLessonModal from '@/features/teacherHomeworkLessons/components/CreateHomeworkLessonModal';
+
 export default function HomeworkLessonsPage() {
     const router = useRouter();
     const [search, setSearch] = useState('');
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // 💡 State لفتح وقفل الـ Modal
 
-    // 💡 بيانات وهمية مؤقتة لحد ما نربط بالباك إند
     const mockHomeworkLessons = [
         { id: '1', title: 'حل واجب الباب الأول: الكهربية', stage: 'الصف الثالث الثانوي', date: '2026-04-20', videosCount: 2, pdfsCount: 1 },
         { id: '2', title: 'إجابات نموذجية: الباب الثاني', stage: 'الصف الثاني الثانوي', date: '2026-04-21', videosCount: 1, pdfsCount: 2 },
     ];
-
-    const handleCreateNew = () => {
-        // في العادي هنا بنفتح Modal ياخد الاسم، بس للتسهيل هننقله فوراً لصفحة الإنشاء
-        // ونبقى نديها ID وهمي أو جديد
-        const newId = Math.random().toString(36).substring(2, 9);
-        router.push(`/teacher/homework-lessons/${newId}`);
-    };
 
     return (
         <div style={{ animation: 'fadeIn 0.5s ease' }}>
@@ -30,13 +26,13 @@ export default function HomeworkLessonsPage() {
                     </h1>
                     <p style={{ color: 'var(--txt-mut)', margin: 0, fontSize: '0.9rem' }}>أضف فيديوهات ومذكرات حل الواجبات لتكون جاهزة للربط بالكورسات.</p>
                 </div>
-                <Button variant="primary" icon={<FaPlus />} onClick={handleCreateNew} style={{ background: '#1abc9c', color: '#fff' }}>
+                {/* 💡 الزرار بقى بيفتح الـ Modal */}
+                <Button variant="primary" icon={<FaPlus />} onClick={() => setIsCreateModalOpen(true)} style={{ background: '#1abc9c', color: '#fff' }}>
                     إضافة حصة حل واجب
                 </Button>
             </div>
 
             <div style={{ background: 'var(--card)', padding: '20px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                {/* 🔍 البحث */}
                 <div style={{ marginBottom: '20px', display: 'flex', gap: '15px' }}>
                     <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
                         <FaSearch style={{ position: 'absolute', right: '15px', top: '15px', color: 'var(--txt-mut)' }} />
@@ -50,7 +46,6 @@ export default function HomeworkLessonsPage() {
                     </div>
                 </div>
 
-                {/* 📊 الجدول */}
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
                         <thead>
@@ -84,6 +79,12 @@ export default function HomeworkLessonsPage() {
                     </table>
                 </div>
             </div>
+
+            {/* 💡 الـ Component بتاعنا اللي بيظهر لما بندوس إضافة */}
+            <CreateHomeworkLessonModal 
+                isOpen={isCreateModalOpen} 
+                onClose={() => setIsCreateModalOpen(false)} 
+            />
         </div>
     );
 }

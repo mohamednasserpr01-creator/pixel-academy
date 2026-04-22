@@ -1,4 +1,3 @@
-// FILE: app/teacher/layout.tsx
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -6,7 +5,8 @@ import { usePathname } from 'next/navigation';
 import { 
     FaChalkboardTeacher, FaBookOpen, FaPlayCircle, 
     FaClipboardList, FaQrcode, FaUsers, FaChartLine, 
-    FaBars, FaTimes, FaWallet, FaFolderOpen, FaUserShield
+    FaBars, FaTimes, FaWallet, FaFolderOpen, FaUserShield,
+    FaVideo, FaPenNib
 } from 'react-icons/fa';
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
@@ -17,7 +17,8 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
         { title: 'الرئيسية (الداشبورد)', path: '/teacher/dashboard', icon: <FaChartLine /> },
         { title: 'الكورسات', path: '/teacher/courses', icon: <FaBookOpen /> },
         { title: 'الحصص ومحتواها', path: '/teacher/lessons', icon: <FaPlayCircle /> },
-        { title: 'الواجبات', path: '/teacher/homework', icon: <FaBookOpen /> }, // 💡 تم إضافة الواجبات كقسم منفصل
+        { title: 'حصص حل الواجب', path: '/teacher/homework-lessons', icon: <FaVideo /> },
+        { title: 'الواجبات', path: '/teacher/homework', icon: <FaPenNib /> },
         { title: 'الامتحانات', path: '/teacher/exams', icon: <FaClipboardList /> },
         { title: 'بنوك الأسئلة', path: '/teacher/question-banks', icon: <FaChalkboardTeacher /> },
         { title: 'أكواد الشحن', path: '/teacher/codes', icon: <FaQrcode /> },
@@ -56,8 +57,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
 
                 <div style={{ padding: '20px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                     {menuItems.map((item, idx) => {
-                        const isActive = pathname.startsWith(item.path);
-                        return (
+const isActive = pathname === item.path || pathname.startsWith(`${item.path}/`);                        return (
                             <Link key={idx} href={item.path} style={{ textDecoration: 'none' }}>
                                 <div style={{ 
                                     display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', 
@@ -84,14 +84,14 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
                 flexDirection: 'column',
                 minHeight: '100vh'
             }}>
-                {/* Navbar العلوية (تم تحويلها لـ div لفك الاشتباك مع الستايل العام) */}
+                {/* Navbar العلوية */}
                 <div style={{ 
                     background: 'rgba(15, 23, 42, 0.95)', 
                     backdropFilter: 'blur(10px)',
                     padding: '15px 30px', 
                     display: 'flex', 
                     alignItems: 'center', 
-                    justifyContent: 'space-between', 
+                    justifyContent: 'space-between', // 💡 الإيرور كان هنا وتم حله
                     borderBottom: '1px solid rgba(255,255,255,0.05)',
                     position: 'sticky',
                     top: 0,
