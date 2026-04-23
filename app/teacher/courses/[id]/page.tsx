@@ -13,7 +13,13 @@ import { useCurriculum } from '@/features/course-builder/hooks/useCurriculum';
 import { LectureCard } from '@/features/course-builder/components/LectureCard';
 import { ItemSettingsDrawer } from '@/features/course-builder/components/ItemSettingsDrawer';
 import { ContentPickerModal } from '@/features/course-builder/components/ContentPickerModal';
-import { PricingTab } from '@/features/course-builder/components/PricingTab'; // 🚀 استدعاء شاشة التسعير
+import { PricingTab } from '@/features/course-builder/components/PricingTab'; 
+import { StudentsTab } from '@/features/course-builder/components/StudentsTab'; 
+
+import { ItemReportsModal } from '@/features/course-builder/components/ItemReportsModal'; 
+// 🚀 استدعاء مودال تقرير المحاضرة الكاملة
+import { LectureReportsModal } from '@/features/course-builder/components/LectureReportsModal'; 
+
 import { Lecture, LectureItem as LectureItemType } from '@/features/course-builder/types/curriculum.types';
 
 const initialData: Lecture[] = [
@@ -48,6 +54,10 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
 
     const [activeLectureId, setActiveLectureId] = useState<string | null>(null);
     const [settingsItem, setSettingsItem] = useState<{ lectureId: string, item: LectureItemType } | null>(null);
+    
+    const [reportItem, setReportItem] = useState<LectureItemType | null>(null);
+    // 🚀 State جديدة لتقرير المحاضرة كاملة
+    const [reportLecture, setReportLecture] = useState<Lecture | null>(null);
 
     useEffect(() => { setIsMounted(true); }, []);
 
@@ -158,16 +168,21 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                                     onUpdateLecture={updateLecture}
                                     onOpenContentPicker={(lecId: string) => setActiveLectureId(lecId)}
                                     onOpenSettings={(item: LectureItemType) => setSettingsItem({ lectureId: lecture.id, item })}
+                                    onOpenReports={(item: LectureItemType) => setReportItem(item)}
+                                    // 🚀 تمرير الدالة الجديدة للمودال
+                                    onOpenLectureReports={(lec: Lecture) => setReportLecture(lec)}
                                 />
                             ))}
                         </DndContext>
                     </div>
                 )}
 
-                {/* 🚀 تم استبدال الجملة القديمة بشاشة التسعير الاحترافية */}
                 {activeTab === 'pricing' && <PricingTab curriculum={curriculum} />}
                 
-                {activeTab === 'students' && <div style={{ color: 'var(--txt-mut)', textAlign: 'center', padding: '50px' }}>جدول الطلاب وإحصائيات الـ Drop-off (قيد الإنشاء)</div>}
+                {activeTab === 'students' && (
+                    <StudentsTab courseId={resolvedParams.id} curriculum={curriculum} />
+                )}
+                
                 {activeTab === 'notifications' && <div style={{ color: 'var(--txt-mut)', textAlign: 'center', padding: '50px' }}>محرك إشعارات الواتساب (قيد الإنشاء)</div>}
             </div>
 
@@ -187,6 +202,19 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                 onSave={(itemId: string, updates: Partial<LectureItemType>) => {
                     if (settingsItem) updateItem(settingsItem.lectureId, itemId, updates);
                 }}
+            />
+
+            <ItemReportsModal 
+                isOpen={!!reportItem} 
+                onClose={() => setReportItem(null)} 
+                item={reportItem} 
+            />
+
+            {/* 🚀 حقن مودال التقرير الشامل للمحاضرة */}
+            <LectureReportsModal 
+                isOpen={!!reportLecture} 
+                onClose={() => setReportLecture(null)} 
+                lecture={reportLecture} 
             />
 
         </div>

@@ -1,147 +1,127 @@
-// FILE: features/course-builder/components/StudentsTab.tsx
 "use client";
 import React, { useState } from 'react';
-import { FaUserGraduate, FaSearch, FaBan, FaCheckCircle, FaWallet, FaBarcode, FaGift, FaLock, FaUnlock } from 'react-icons/fa';
+import { FaUserGraduate, FaSearch, FaFileExcel, FaUserPlus, FaChevronRight, FaChevronLeft, FaListOl, FaWallet, FaBarcode } from 'react-icons/fa';
 import { Lecture } from '../types/curriculum.types';
 import { useCourseStudents } from '../hooks/useCourseStudents';
+import { AddStudentModal } from './AddStudentModal';
+import { StudentProfileModal } from './StudentProfileModal';
+import { EnrolledStudent } from '../types/course-students.types';
 
-interface Props {
-    courseId: string;
-    curriculum: Lecture[]; // محتاجين المنهج عشان نعرض المحاضرات للطالب
-}
+interface Props { courseId: string; curriculum: Lecture[]; }
 
 export const StudentsTab: React.FC<Props> = ({ courseId, curriculum }) => {
     const {
-        students, isLoading, searchQuery, setSearchQuery,
-        handleToggleBlock, handleToggleLectureAccess
-    } = useCourseStudents(courseId);
+        students, totalStudents, currentPage, setCurrentPage, totalPages,
+        isLoading, searchQuery, setSearchQuery, 
+        courseStats, // 🚀 الإحصائيات السريعة
+        handleExportCourseEnrolled, handleExportAllExams, handleExportCourseAbsentees, handleExportMasterExcel,
+        isAddStudentModalOpen, setIsAddStudentModalOpen
+    } = useCourseStudents(courseId, curriculum);
 
-    // حالة لفتح/قفل نافذة إدارة الحصص لكل طالب
-    const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
+    const [selectedProfile, setSelectedProfile] = useState<EnrolledStudent | null>(null);
 
-    const getPaymentIcon = (method: string) => {
-        if (method === 'wallet') return <><FaWallet color="#3498db" /> محفظة</>;
-        if (method === 'custom_code') return <><FaBarcode color="var(--p-purple)" /> كود</>;
-        return <><FaGift color="#2ecc71" /> مجاني</>;
+    const getSubscriptionLabel = (type: string) => {
+        const labels: Record<string, string> = {
+            'manual_teacher': 'إضافة يدوية', 'wallet': 'رصيد محفظة',
+            'offer_code': 'كود عرض', 'course_code': 'كود كورس', 'lecture_code': 'كود حصة'
+        };
+        return labels[type] || type;
     };
 
-    if (isLoading) {
-        return <div style={{ textAlign: 'center', padding: '50px', color: 'white' }}>جاري تحميل بيانات الطلاب... ⏳</div>;
-    }
+    if (isLoading) return <div style={{ textAlign: 'center', padding: '50px', color: 'white' }}>جاري التحميل... ⏳</div>;
 
     return (
         <div style={{ animation: 'fadeIn 0.4s ease', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
-            {/* شريط البحث */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <h3 style={{ margin: 0, color: 'white', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <FaUserGraduate color="#3498db" /> المشتركين في الكورس ({students.length})
-                </h3>
-                <div style={{ position: 'relative', width: '300px' }}>
-                    <FaSearch style={{ position: 'absolute', right: '15px', top: '12px', color: 'var(--txt-mut)' }} />
-                    <input 
-                        type="text" 
-                        placeholder="ابحث بالاسم، الرقم، أو الكود..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        style={{ width: '100%', padding: '10px 40px 10px 15px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px', outline: 'none' }}
-                    />
+            {/* 🚀 كروت الإحصائيات السريعة (Dashboard Widgets) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px', marginBottom: '5px' }}>
+                <div style={{ background: 'rgba(52, 152, 219, 0.1)', border: '1px solid rgba(52, 152, 219, 0.3)', padding: '15px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'rgba(52, 152, 219, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FaUserGraduate size={24} color="#3498db" /></div>
+                    <div><div style={{ color: 'var(--txt-mut)', fontSize: '0.9rem' }}>المسجلين بالكورس</div><div style={{ color: 'white', fontSize: '1.6rem', fontWeight: 'bold' }}>{courseStats.total}</div></div>
+                </div>
+                <div style={{ background: 'rgba(155, 89, 182, 0.1)', border: '1px solid rgba(155, 89, 182, 0.3)', padding: '15px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'rgba(155, 89, 182, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FaUserPlus size={24} color="#9b59b6" /></div>
+                    <div><div style={{ color: 'var(--txt-mut)', fontSize: '0.9rem' }}>إضافة يدوية</div><div style={{ color: 'white', fontSize: '1.6rem', fontWeight: 'bold' }}>{courseStats.manual}</div></div>
+                </div>
+                <div style={{ background: 'rgba(46, 204, 113, 0.1)', border: '1px solid rgba(46, 204, 113, 0.3)', padding: '15px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'rgba(46, 204, 113, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FaWallet size={24} color="#2ecc71" /></div>
+                    <div><div style={{ color: 'var(--txt-mut)', fontSize: '0.9rem' }}>رصيد محفظة</div><div style={{ color: 'white', fontSize: '1.6rem', fontWeight: 'bold' }}>{courseStats.wallet}</div></div>
+                </div>
+                <div style={{ background: 'rgba(241, 196, 15, 0.1)', border: '1px solid rgba(241, 196, 15, 0.3)', padding: '15px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'rgba(241, 196, 15, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FaBarcode size={24} color="#f1c40f" /></div>
+                    <div><div style={{ color: 'var(--txt-mut)', fontSize: '0.9rem' }}>عن طريق أكواد</div><div style={{ color: 'white', fontSize: '1.6rem', fontWeight: 'bold' }}>{courseStats.codes}</div></div>
                 </div>
             </div>
 
-            {/* جدول الطلاب */}
-            <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                {students.length === 0 ? (
-                    <div style={{ padding: '30px', textAlign: 'center', color: 'var(--txt-mut)' }}>لا يوجد طلاب متطابقين مع البحث.</div>
-                ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', color: 'white', textAlign: 'right' }}>
-                        <thead>
-                            <tr style={{ background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                                <th style={{ padding: '15px' }}>الطالب</th>
-                                <th style={{ padding: '15px' }}>طريقة الدفع</th>
-                                <th style={{ padding: '15px' }}>تاريخ الانضمام</th>
-                                <th style={{ padding: '15px', textAlign: 'center' }}>الوصول للحصص</th>
-                                <th style={{ padding: '15px', textAlign: 'center' }}>حالة الكورس</th>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap', gap: '15px' }}>
+                <div style={{ position: 'relative', width: '350px' }}>
+                    <FaSearch style={{ position: 'absolute', right: '15px', top: '12px', color: 'var(--txt-mut)' }} />
+                    <input type="text" placeholder="ابحث بالاسم أو الرقم أو التسلسل..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }} style={{ width: '100%', padding: '10px 40px 10px 15px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px', outline: 'none' }} />
+                </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <button onClick={handleExportMasterExcel} style={{ background: 'rgba(52, 152, 219, 0.2)', color: '#3498db', border: '1px solid #3498db', padding: '10px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+                        <FaFileExcel /> التقرير الشامل
+                    </button>
+                    <button onClick={handleExportAllExams} style={{ background: 'rgba(241, 196, 15, 0.2)', color: '#f1c40f', border: '1px solid #f1c40f', padding: '10px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+                        <FaListOl /> درجات الامتحانات
+                    </button>
+                    <button onClick={handleExportCourseEnrolled} style={{ background: 'rgba(39, 174, 96, 0.2)', color: '#2ecc71', border: '1px solid #27ae60', padding: '10px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+                        <FaFileExcel /> المسجلين بالكورس
+                    </button>
+                    <button onClick={handleExportCourseAbsentees} style={{ background: 'rgba(231, 76, 60, 0.2)', color: '#e74c3c', border: '1px solid #e74c3c', padding: '10px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+                        <FaFileExcel /> متخلفين إطلاقاً
+                    </button>
+                    <button onClick={() => setIsAddStudentModalOpen(true)} style={{ background: 'var(--p-purple)', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+                        <FaUserPlus /> إضافة يدوية
+                    </button>
+                </div>
+            </div>
+
+            <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', overflowX: 'auto' }}>
+                <table style={{ width: '100%', minWidth: '1000px', borderCollapse: 'collapse', color: 'white', textAlign: 'right' }}>
+                    <thead>
+                        <tr style={{ background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                            <th style={{ padding: '15px' }}>م</th>
+                            <th style={{ padding: '15px' }}>تسلسل</th>
+                            <th style={{ padding: '15px' }}>اسم الطالب</th>
+                            <th style={{ padding: '15px' }}>هاتف الطالب</th>
+                            <th style={{ padding: '15px' }}>نوع الاشتراك</th>
+                            <th style={{ padding: '15px', textAlign: 'center' }}>الإنجاز</th>
+                            <th style={{ padding: '15px', textAlign: 'center' }}>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {students.map((student, index) => (
+                            <tr key={student.id} style={{ borderBottom: '1px dashed rgba(255,255,255,0.05)' }}>
+                                <td style={{ padding: '15px', color: 'var(--txt-mut)' }}>{(currentPage - 1) * 50 + index + 1}</td>
+                                <td style={{ padding: '15px', fontWeight: 'bold', color: 'var(--p-purple)' }}>{student.serialNumber}</td>
+                                <td style={{ padding: '15px', fontWeight: 'bold' }}>{student.name}</td>
+                                <td style={{ padding: '15px' }}>{student.phone}</td>
+                                <td style={{ padding: '15px', color: '#f39c12', fontSize: '0.9rem' }}>{getSubscriptionLabel(student.paymentMethod)}</td>
+                                <td style={{ padding: '15px', textAlign: 'center' }}>{student.progress}%</td>
+                                <td style={{ padding: '15px', textAlign: 'center' }}>
+                                    <button onClick={() => setSelectedProfile(student)} style={{ background: 'rgba(52, 152, 219, 0.1)', color: '#3498db', border: '1px solid #3498db', padding: '6px 12px', borderRadius: '5px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                        بروفايل الطالب
+                                    </button>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {students.map(student => (
-                                <React.Fragment key={student.id}>
-                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: student.isBlocked ? 'rgba(231, 76, 60, 0.05)' : 'transparent' }}>
-                                        <td style={{ padding: '15px' }}>
-                                            <div style={{ fontWeight: 'bold' }}>{student.name}</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--txt-mut)' }}>{student.phone}</div>
-                                        </td>
-                                        <td style={{ padding: '15px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-                                                {getPaymentIcon(student.paymentMethod)}
-                                            </div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--txt-mut)', marginTop: '4px' }}>{student.paymentDetails}</div>
-                                        </td>
-                                        <td style={{ padding: '15px', fontSize: '0.9rem', color: 'var(--txt-mut)' }}>{student.enrolledAt}</td>
-                                        
-                                        <td style={{ padding: '15px', textAlign: 'center' }}>
-                                            <button 
-                                                onClick={() => setExpandedStudent(expandedStudent === student.id ? null : student.id)}
-                                                style={{ background: 'rgba(52, 152, 219, 0.1)', color: '#3498db', border: '1px solid #3498db', padding: '6px 12px', borderRadius: '5px', cursor: 'pointer', fontSize: '0.85rem' }}
-                                            >
-                                                إدارة الحصص ({student.accessibleLectures.length}/{curriculum.length})
-                                            </button>
-                                        </td>
-
-                                        <td style={{ padding: '15px', textAlign: 'center' }}>
-                                            {/* زرار الحظر والفتح */}
-                                            <button 
-                                                onClick={() => handleToggleBlock(student.id, student.isBlocked)}
-                                                style={{ 
-                                                    background: student.isBlocked ? 'rgba(46, 204, 113, 0.1)' : 'rgba(231, 76, 60, 0.1)', 
-                                                    color: student.isBlocked ? '#2ecc71' : '#e74c3c', 
-                                                    border: `1px solid ${student.isBlocked ? '#2ecc71' : '#e74c3c'}`, 
-                                                    padding: '6px 12px', borderRadius: '5px', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px', margin: '0 auto'
-                                                }}
-                                            >
-                                                {student.isBlocked ? <><FaCheckCircle /> فك الحظر</> : <><FaBan /> حظر من الكورس</>}
-                                            </button>
-                                        </td>
-                                    </tr>
-
-                                    {/* لوحة إدارة الحصص (بتفتح لما تدوس على الزرار) */}
-                                    {expandedStudent === student.id && (
-                                        <tr style={{ background: 'rgba(0,0,0,0.3)' }}>
-                                            <td colSpan={5} style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                                <h4 style={{ margin: '0 0 15px 0', color: 'white', fontSize: '0.95rem' }}>صلاحيات الحصص للطالب: {student.name}</h4>
-                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '10px' }}>
-                                                    {curriculum.length === 0 ? (
-                                                        <span style={{ color: 'var(--txt-mut)' }}>لا توجد حصص في المنهج.</span>
-                                                    ) : (
-                                                        curriculum.map(lec => {
-                                                            const hasAccess = student.accessibleLectures.includes(lec.id);
-                                                            return (
-                                                                <div key={lec.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', padding: '10px 15px', borderRadius: '8px', border: `1px solid ${hasAccess ? 'rgba(46, 204, 113, 0.3)' : 'rgba(255,255,255,0.05)'}` }}>
-                                                                    <span style={{ fontSize: '0.9rem', color: hasAccess ? 'white' : 'var(--txt-mut)' }}>{lec.title}</span>
-                                                                    
-                                                                    {/* زرار غلق وفتح الحصة للطالب */}
-                                                                    <button 
-                                                                        onClick={() => handleToggleLectureAccess(student.id, lec.id)}
-                                                                        style={{ background: 'none', border: 'none', color: hasAccess ? '#2ecc71' : 'var(--txt-mut)', cursor: 'pointer', fontSize: '1.1rem' }}
-                                                                        title={hasAccess ? 'إغلاق الحصة' : 'فتح الحصة'}
-                                                                    >
-                                                                        {hasAccess ? <FaUnlock /> : <FaLock />}
-                                                                    </button>
-                                                                </div>
-                                                            );
-                                                        })
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </React.Fragment>
-                            ))}
-                        </tbody>
-                    </table>
+                        ))}
+                    </tbody>
+                </table>
+                
+                {totalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '15px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                        <span style={{ color: 'var(--txt-mut)' }}>صفحة {currentPage} من {totalPages}</span>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '8px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}><FaChevronRight /> السابق</button>
+                            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '8px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}>التالي <FaChevronLeft /></button>
+                        </div>
+                    </div>
                 )}
             </div>
+
+            <AddStudentModal isOpen={isAddStudentModalOpen} onClose={() => setIsAddStudentModalOpen(false)} curriculum={curriculum} onAdd={(phone) => alert(`تم الإرسال: ${phone}`)} />
+            <StudentProfileModal isOpen={!!selectedProfile} onClose={() => setSelectedProfile(null)} student={selectedProfile} />
         </div>
     );
 };

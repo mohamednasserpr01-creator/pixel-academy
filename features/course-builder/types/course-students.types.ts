@@ -1,13 +1,35 @@
-// FILE: features/course-builder/types/course-students.types.ts
+export type TrackingStatus = 'not_started' | 'in_progress' | 'completed' | 'passed' | 'failed' | 'submitted' | 'not_submitted';
+export type ItemType = 'lesson' | 'exam' | 'homework' | 'makeup_exam';
+
+export interface ItemTrackingRecord {
+    itemId: string;
+    type: ItemType;
+    status: TrackingStatus;
+    score?: number;
+    maxScore?: number;
+    watchPercentage?: number;
+    viewsCount?: number;
+    lastAccessedAt?: string;
+}
+
+// 🚀 أنواع الاشتراك الدقيقة
+export type SubscriptionType = 'manual_teacher' | 'wallet' | 'offer_code' | 'course_code' | 'lecture_code';
 
 export interface EnrolledStudent {
     id: string;
+    serialNumber: string;
     name: string;
     phone: string;
+    parentPhone: string;
+    governorate: string;
+    address: string;
     enrolledAt: string;
-    paymentMethod: 'wallet' | 'custom_code' | 'free';
-    paymentDetails: string; // مثال: الكود المستخدم أو المبلغ
-    isBlocked: boolean; // حالة حظر الطالب من الكورس
-    accessibleLectures: string[]; // الـ IDs بتاعت المحاضرات اللي مسموحله يشوفها
-    progress: number; // نسبة الإنجاز
+    
+    paymentMethod: SubscriptionType; // 🚀 اتحدثت
+    paymentDetails: string;
+    
+    isBlocked: boolean;
+    progress: number;
+    accessibleLectures: string[]; 
+    trackingDetails: ItemTrackingRecord[];
 }

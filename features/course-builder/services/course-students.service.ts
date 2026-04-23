@@ -1,23 +1,39 @@
-// FILE: features/course-builder/services/course-students.service.ts
-import { EnrolledStudent } from '../types/course-students.types';
+import { EnrolledStudent, SubscriptionType } from '../types/course-students.types';
 
-// بيانات وهمية للتجربة (Mock Data)
-const MOCK_STUDENTS: EnrolledStudent[] = [
-    { id: 'S1', name: 'أحمد محمود', phone: '01012345678', enrolledAt: '2023-10-01 10:00 AM', paymentMethod: 'wallet', paymentDetails: 'خصم 500 ج.م', isBlocked: false, accessibleLectures: ['L1', 'L2'], progress: 45 },
-    { id: 'S2', name: 'سارة علي', phone: '01198765432', enrolledAt: '2023-10-02 12:30 PM', paymentMethod: 'custom_code', paymentDetails: 'الكود: A1B2C3D4', isBlocked: true, accessibleLectures: [], progress: 0 },
-    { id: 'S3', name: 'كريم حسن', phone: '01234567890', enrolledAt: '2023-10-03 09:15 AM', paymentMethod: 'free', paymentDetails: 'منحة', isBlocked: false, accessibleLectures: ['L1'], progress: 10 },
-];
+// 🚀 توليد الداتا باستخدام أنواع الاشتراك الجديدة (SubscriptionType)
+export const generateMockStudents = (count: number): EnrolledStudent[] => {
+    const subs: SubscriptionType[] = ['manual_teacher', 'wallet', 'offer_code', 'course_code', 'lecture_code'];
+    
+    return Array.from({ length: count }).map((_, i) => ({
+        id: `STU-${i + 1}`,
+        serialNumber: `100${i + 1}`,
+        name: `طالب تجريبي رقم ${i + 1}`,
+        phone: `010${Math.floor(10000000 + Math.random() * 90000000)}`,
+        parentPhone: `011${Math.floor(10000000 + Math.random() * 90000000)}`,
+        governorate: i % 2 === 0 ? 'الإسكندرية' : 'القاهرة',
+        address: 'شارع المعسكر، متفرع من كذا...',
+        enrolledAt: '2023-10-01 10:00',
+        paymentMethod: subs[i % subs.length], // 👈 حل الإيرور الأول
+        paymentDetails: i % 3 === 0 ? 'خصم رصيد' : 'كود: X9Y8Z',
+        isBlocked: i === 5,
+        progress: Math.floor(Math.random() * 100),
+        accessibleLectures: ['lec-1'],
+        trackingDetails: [
+            { itemId: 'item-1', type: 'lesson', status: 'completed', watchPercentage: 100, viewsCount: 2 },
+            { itemId: 'item-2', type: 'homework', status: 'submitted', score: 9, maxScore: 10 },
+            { itemId: 'item-3', type: 'exam', status: 'failed', score: 8, maxScore: 20 },
+            { itemId: 'item-makeup', type: 'makeup_exam', status: 'passed', score: 18, maxScore: 20 },
+        ]
+    }));
+};
 
 export const CourseStudentsService = {
-    // جلب الطلاب
     fetchEnrolledStudents: async (courseId: string): Promise<EnrolledStudent[]> => {
-        return new Promise((resolve) => setTimeout(() => resolve([...MOCK_STUDENTS]), 1000));
+        return new Promise((resolve) => setTimeout(() => resolve(generateMockStudents(120)), 1000));
     },
-    // تغيير حالة الحظر
     toggleStudentBlock: async (studentId: string, isBlocked: boolean) => {
         return new Promise((resolve) => setTimeout(() => resolve({ success: true }), 500));
     },
-    // تعديل صلاحيات المحاضرات لطالب
     updateStudentLectures: async (studentId: string, lectureIds: string[]) => {
         return new Promise((resolve) => setTimeout(() => resolve({ success: true }), 500));
     }

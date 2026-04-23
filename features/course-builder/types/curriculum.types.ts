@@ -1,7 +1,8 @@
 // ==========================================
 // 💡 أنواع المحتوى وشروط الفتح
 // ==========================================
-export type ContentType = 'lesson' | 'homework' | 'homework_lesson' | 'exam';
+// 🚀 تم إضافة 'makeup_exam' لحل الإيرور وربطها بتقرير الإكسيل
+export type ContentType = 'lesson' | 'homework' | 'homework_lesson' | 'exam' | 'makeup_exam';
 
 export type PrerequisiteType = 'none' | 'prev' | 'specific_exam' | 'specific_hw';
 
