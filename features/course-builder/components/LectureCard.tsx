@@ -14,9 +14,10 @@ interface Props {
     onOpenSettings: (item: LectureItemType) => void;
     onOpenReports: (item: LectureItemType) => void; 
     onOpenLectureReports: (lecture: Lecture) => void;
+    onOpenGrading: (item: LectureItemType) => void; // 🚀 استقبال دالة التصحيح
 }
 
-export const LectureCard: React.FC<Props> = ({ lecture, onUpdateLecture, onOpenContentPicker, onOpenSettings, onOpenReports, onOpenLectureReports }) => {
+export const LectureCard: React.FC<Props> = ({ lecture, onUpdateLecture, onOpenContentPicker, onOpenSettings, onOpenReports, onOpenLectureReports, onOpenGrading }) => {
     const [isExpanded, setIsExpanded] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(lecture.title);
@@ -29,13 +30,11 @@ export const LectureCard: React.FC<Props> = ({ lecture, onUpdateLecture, onOpenC
 
     const isVideoItem = (type: string) => ['lesson', 'homework_lesson'].includes(type);
 
-    // 🚀 تشغيل شيت المحاضرة (مفصول لمتخلفين وحاضرين)
     const handleExportLectureReport = () => {
         alert(`جاري تحميل تقرير شامل وخاص بـ المتخلفين لـ: ${lecture.title}`);
         
-        // 💡 داتا للطلاب المسجلين في المحاضرة دي تحديداً
         const mockStudents = Array.from({ length: 30 }).map((_, i) => {
-            const hasMissedExam = Math.random() > 0.7; // 30% من الطلاب متخلفين عن امتحان ما
+            const hasMissedExam = Math.random() > 0.7; 
             return {
                 serialNumber: `100${i + 1}`, name: `طالب مسجل بالمحاضرة ${i + 1}`, phone: `010${Math.floor(10000000 + Math.random() * 90000000)}`,
                 parentPhone: `011${Math.floor(10000000 + Math.random() * 90000000)}`, governorate: i % 2 === 0 ? 'الإسكندرية' : 'القاهرة',
@@ -61,13 +60,11 @@ export const LectureCard: React.FC<Props> = ({ lecture, onUpdateLecture, onOpenC
 
         const workbook = XLSX.utils.book_new();
 
-        // الشيت 1: كل المسجلين في المحاضرة
         const wsAll = XLSX.utils.json_to_sheet(mockStudents.map(formatRow), { header: fullHeaders });
         wsAll['!views'] = [{ rightToLeft: true, state: 'frozen', ySplit: 1 }];
         wsAll['!cols'] = fullHeaders.map(() => ({ wch: 20 }));
         XLSX.utils.book_append_sheet(workbook, wsAll, "المسجلين بالمحاضرة");
 
-        // الشيت 2: المتخلفين عن الامتحانات (اللي عندهم "لم يمتحن" في أي تقييم)
         const absentees = mockStudents.filter(s => s.tracking.some(t => !isVideoItem(t.type) && t.val === 'لم يمتحن'));
         if (absentees.length > 0) {
             const wsAbsentees = XLSX.utils.json_to_sheet(absentees.map(formatRow), { header: fullHeaders });
@@ -105,7 +102,15 @@ export const LectureCard: React.FC<Props> = ({ lecture, onUpdateLecture, onOpenC
             {isExpanded && (
                 <div className={styles.cardBody}>
                     <SortableContext items={lecture.items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                        {lecture.items.map((item) => <LectureItem key={item.id} item={item} onOpenSettings={onOpenSettings} onOpenReports={onOpenReports} />)}
+                        {lecture.items.map((item) => (
+                            <LectureItem 
+                                key={item.id} 
+                                item={item} 
+                                onOpenSettings={onOpenSettings} 
+                                onOpenReports={onOpenReports} 
+                                onOpenGrading={onOpenGrading} // 🚀 تمرير دالة التصحيح للعنصر
+                            />
+                        ))}
                     </SortableContext>
                     <button onClick={() => onOpenContentPicker(lecture.id)} className={styles.addContentBtn}><FaPlus /> إضافة محتوى للمحاضرة</button>
                 </div>

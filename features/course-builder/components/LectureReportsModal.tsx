@@ -7,18 +7,18 @@ import { Lecture } from '../types/curriculum.types';
 interface Props { isOpen: boolean; onClose: () => void; lecture: Lecture | null; }
 
 export const LectureReportsModal: React.FC<Props> = ({ isOpen, onClose, lecture }) => {
+    // 🚀 1. ترتيب الـ Hooks في البداية
     const [searchQuery, setSearchQuery] = useState('');
 
     const isVideoItem = (type: string) => ['lesson', 'homework_lesson'].includes(type);
 
-    // 🚀 1. رفعنا كل الـ Hooks فوق وعملنا حماية (Safe Check)
     const mockReports = useMemo(() => {
-        if (!lecture) return []; // لو مفيش داتا، رجع مصفوفة فاضية ومتضربش إيرور
-        
+        if (!lecture) return [];
         return Array.from({ length: 20 }).map((_, i) => ({
             serialNumber: `100${i + 1}`, name: `طالب تجريبي ${i + 1}`, phone: `010${Math.floor(10000000 + Math.random() * 90000000)}`,
             parentPhone: `011${Math.floor(10000000 + Math.random() * 90000000)}`, governorate: i % 2 === 0 ? 'الإسكندرية' : 'القاهرة',
             subscription: i % 4 === 0 ? 'إضافة يدوية' : i % 4 === 1 ? 'محفظة' : 'كود حصة',
+            enrolledAt: '2023-10-01 10:00', // 🚀 إضافة تاريخ الانضمام
             tracking: lecture.items.map(item => {
                 const isVid = isVideoItem(item.type);
                 const isAbsent = Math.random() > 0.8; 
@@ -43,12 +43,16 @@ export const LectureReportsModal: React.FC<Props> = ({ isOpen, onClose, lecture 
         }, { total: 0, manual: 0, wallet: 0, codes: 0 });
     }, [filteredReports]);
 
-    // 🚀 2. الإغلاق المبكر ينزل تحت خالص بعد ما كل الـ Hooks تتسجل
+    // 🚀 2. الحماية (Safe Check) تنزل تحت خالص
     if (!isOpen || !lecture) return null;
 
     const handleExportLectureEnrolled = () => {
-        const headers = ['الرقم التسلسلي', 'اسم الطالب', 'رقم الهاتف', 'رقم ولي الأمر', 'المحافظة', 'نوع الاشتراك'];
-        const data = filteredReports.map(s => ({ 'الرقم التسلسلي': s.serialNumber, 'اسم الطالب': s.name, 'رقم الهاتف': s.phone, 'رقم ولي الأمر': s.parentPhone, 'المحافظة': s.governorate, 'نوع الاشتراك': s.subscription }));
+        const headers = ['الرقم التسلسلي', 'اسم الطالب', 'رقم الهاتف', 'رقم ولي الأمر', 'المحافظة', 'تاريخ الانضمام', 'نوع الاشتراك'];
+        const data = filteredReports.map(s => ({
+            'الرقم التسلسلي': s.serialNumber, 'اسم الطالب': s.name, 'رقم الهاتف': s.phone, 'رقم ولي الأمر': s.parentPhone, 
+            'المحافظة': s.governorate, 'تاريخ الانضمام': s.enrolledAt, 'نوع الاشتراك': s.subscription
+        }));
+
         const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
         const workbook = XLSX.utils.book_new();
         worksheet['!views'] = [{ rightToLeft: true, state: 'frozen', ySplit: 1 }];
@@ -60,8 +64,13 @@ export const LectureReportsModal: React.FC<Props> = ({ isOpen, onClose, lecture 
     const handleExportLectureUnwatched = () => {
         const unwatched = filteredReports.filter(s => s.tracking.some(t => isVideoItem(t.type) && t.val === 'لم يشاهد'));
         if(unwatched.length === 0) return alert("الجميع شاهدوا فيديوهات المحاضرة.");
-        const headers = ['الرقم التسلسلي', 'اسم الطالب', 'رقم الهاتف', 'رقم ولي الأمر', 'المحافظة', 'ملاحظة'];
-        const data = unwatched.map(s => ({ 'الرقم التسلسلي': s.serialNumber, 'اسم الطالب': s.name, 'رقم الهاتف': s.phone, 'رقم ولي الأمر': s.parentPhone, 'المحافظة': s.governorate, 'ملاحظة': 'لم يشاهد فيديو' }));
+
+        const headers = ['الرقم التسلسلي', 'اسم الطالب', 'رقم الهاتف', 'رقم ولي الأمر', 'المحافظة', 'تاريخ الانضمام', 'ملاحظة'];
+        const data = unwatched.map(s => ({
+            'الرقم التسلسلي': s.serialNumber, 'اسم الطالب': s.name, 'رقم الهاتف': s.phone, 'رقم ولي الأمر': s.parentPhone, 
+            'المحافظة': s.governorate, 'تاريخ الانضمام': s.enrolledAt, 'ملاحظة': 'لم يشاهد فيديو'
+        }));
+
         const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
         const workbook = XLSX.utils.book_new();
         worksheet['!views'] = [{ rightToLeft: true, state: 'frozen', ySplit: 1 }];
@@ -73,8 +82,13 @@ export const LectureReportsModal: React.FC<Props> = ({ isOpen, onClose, lecture 
     const handleExportLectureMissedExams = () => {
         const missedExams = filteredReports.filter(s => s.tracking.some(t => !isVideoItem(t.type) && t.val === 'لم يمتحن'));
         if(missedExams.length === 0) return alert("الجميع امتحنوا التقييمات.");
-        const headers = ['الرقم التسلسلي', 'اسم الطالب', 'رقم الهاتف', 'رقم ولي الأمر', 'المحافظة', 'ملاحظة'];
-        const data = missedExams.map(s => ({ 'الرقم التسلسلي': s.serialNumber, 'اسم الطالب': s.name, 'رقم الهاتف': s.phone, 'رقم ولي الأمر': s.parentPhone, 'المحافظة': s.governorate, 'ملاحظة': 'لم يمتحن في المحاضرة' }));
+
+        const headers = ['الرقم التسلسلي', 'اسم الطالب', 'رقم الهاتف', 'رقم ولي الأمر', 'المحافظة', 'تاريخ الانضمام', 'ملاحظة'];
+        const data = missedExams.map(s => ({
+            'الرقم التسلسلي': s.serialNumber, 'اسم الطالب': s.name, 'رقم الهاتف': s.phone, 'رقم ولي الأمر': s.parentPhone, 
+            'المحافظة': s.governorate, 'تاريخ الانضمام': s.enrolledAt, 'ملاحظة': 'لم يمتحن في المحاضرة'
+        }));
+
         const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
         const workbook = XLSX.utils.book_new();
         worksheet['!views'] = [{ rightToLeft: true, state: 'frozen', ySplit: 1 }];
@@ -117,7 +131,7 @@ export const LectureReportsModal: React.FC<Props> = ({ isOpen, onClose, lecture 
                     </div>
                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                         <button onClick={handleExportLectureEnrolled} style={{ background: 'rgba(39, 174, 96, 0.2)', color: '#2ecc71', border: '1px solid #27ae60', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
-                            <FaFileExcel /> المسجلين
+                            <FaFileExcel /> المسجلين بالمحاضرة
                         </button>
                         <button onClick={handleExportLectureUnwatched} style={{ background: 'rgba(52, 152, 219, 0.2)', color: '#3498db', border: '1px solid #3498db', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
                             <FaFileExcel /> لم يشاهدوا

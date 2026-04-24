@@ -2,8 +2,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-// 🚀 استدعاء أيقونة التقارير (FaChartBar)
-import { FaGripVertical, FaCog, FaFilePdf, FaLink, FaChartBar } from 'react-icons/fa'; 
+import { FaGripVertical, FaCog, FaFilePdf, FaLink, FaChartBar, FaPenNib } from 'react-icons/fa'; // 🚀 استدعاء أيقونة القلم
 import { LectureItem as LectureItemType } from '../types/curriculum.types';
 import { getIconForType } from '../utils/icon.utils';
 import styles from '../styles/builder.module.css';
@@ -11,11 +10,11 @@ import styles from '../styles/builder.module.css';
 interface Props {
     item: LectureItemType;
     onOpenSettings: (item: LectureItemType) => void;
-    // 🚀 ضفنا الدالة اللي بتفتح مودال التقارير
     onOpenReports?: (item: LectureItemType) => void; 
+    onOpenGrading?: (item: LectureItemType) => void; // 🚀 إضافة خاصية دالة التصحيح
 }
 
-export const LectureItem: React.FC<Props> = ({ item, onOpenSettings, onOpenReports }) => {
+export const LectureItem: React.FC<Props> = ({ item, onOpenSettings, onOpenReports, onOpenGrading }) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id });
     
     const dndStyle = { transform: CSS.Transform.toString(transform), transition };
@@ -39,10 +38,20 @@ export const LectureItem: React.FC<Props> = ({ item, onOpenSettings, onOpenRepor
                 </div>
             </div>
 
-            {/* 🚀 قسم الأزرار (التقارير + الإعدادات) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 
-                {/* زرار التقارير اللي بيفتح الـ Modal */}
+                {/* 🚀 زرار مركز التصحيح المقالي (يظهر فقط مع الامتحانات والواجبات) */}
+                {onOpenGrading && ['exam', 'homework', 'makeup_exam'].includes(item.type) && (
+                    <button 
+                        onClick={() => onOpenGrading(item)}
+                        style={{ background: 'rgba(230, 126, 34, 0.1)', border: 'none', color: '#e67e22', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.85rem', transition: '0.2s' }}
+                        title="مركز التصحيح المقالي"
+                    >
+                        <FaPenNib /> تصحيح
+                    </button>
+                )}
+
+                {/* زرار التقارير */}
                 {onOpenReports && (
                     <button 
                         onClick={() => onOpenReports(item)}
@@ -53,7 +62,6 @@ export const LectureItem: React.FC<Props> = ({ item, onOpenSettings, onOpenRepor
                     </button>
                 )}
 
-                {/* زرار الإعدادات الأساسي */}
                 <button onClick={() => onOpenSettings(item)} className={styles.iconBtn}>
                     <FaCog />
                 </button>

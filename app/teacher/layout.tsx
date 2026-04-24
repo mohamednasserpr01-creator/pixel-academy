@@ -1,17 +1,30 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation'; 
 import { 
     FaChalkboardTeacher, FaBookOpen, FaPlayCircle, 
     FaClipboardList, FaQrcode, FaUsers, FaChartLine, 
     FaBars, FaTimes, FaWallet, FaFolderOpen, FaUserShield,
-    FaVideo, FaPenNib
+    FaVideo, FaPenNib, FaBell, FaCircle
 } from 'react-icons/fa';
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsNotificationsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const menuItems = [
         { title: 'الرئيسية (الداشبورد)', path: '/teacher/dashboard', icon: <FaChartLine /> },
@@ -31,7 +44,6 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)', color: 'var(--txt)' }}>
             
-            {/* 💡 الـ Sidebar الجانبي */}
             <aside style={{ 
                 width: isSidebarOpen ? '280px' : '0px', 
                 background: 'var(--card)', 
@@ -57,7 +69,8 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
 
                 <div style={{ padding: '20px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                     {menuItems.map((item, idx) => {
-const isActive = pathname === item.path || pathname.startsWith(`${item.path}/`);                        return (
+                        const isActive = pathname === item.path || pathname.startsWith(`${item.path}/`);                        
+                        return (
                             <Link key={idx} href={item.path} style={{ textDecoration: 'none' }}>
                                 <div style={{ 
                                     display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', 
@@ -75,7 +88,6 @@ const isActive = pathname === item.path || pathname.startsWith(`${item.path}/`);
                 </div>
             </aside>
 
-            {/* 💡 المحتوى الرئيسي (Main Content) */}
             <main style={{ 
                 flex: 1, 
                 transition: '0.3s ease', 
@@ -84,14 +96,13 @@ const isActive = pathname === item.path || pathname.startsWith(`${item.path}/`);
                 flexDirection: 'column',
                 minHeight: '100vh'
             }}>
-                {/* Navbar العلوية */}
                 <div style={{ 
                     background: 'rgba(15, 23, 42, 0.95)', 
                     backdropFilter: 'blur(10px)',
                     padding: '15px 30px', 
                     display: 'flex', 
                     alignItems: 'center', 
-                    justifyContent: 'space-between', // 💡 الإيرور كان هنا وتم حله
+                    justifyContent: 'space-between',
                     borderBottom: '1px solid rgba(255,255,255,0.05)',
                     position: 'sticky',
                     top: 0,
@@ -106,8 +117,83 @@ const isActive = pathname === item.path || pathname.startsWith(`${item.path}/`);
                         )}
                         <h2 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--txt)' }}>لوحة تحكم المدرس</h2>
                     </div>
+ 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <div style={{ textAlign: 'left', direction: 'ltr' }}>
+                        
+                        {/* 🚀 حاوية أيقونة الجرس والقايمة المنسدلة */}
+                        <div ref={dropdownRef} style={{ position: 'relative' }}>
+                            <button 
+                                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                                style={{ position: 'relative', background: 'rgba(241, 196, 15, 0.1)', color: '#f1c40f', border: '1px solid rgba(241, 196, 15, 0.3)', width: '45px', height: '45px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: '0.2s', marginLeft: '10px' }}
+                                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(241, 196, 15, 0.2)'}
+                                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(241, 196, 15, 0.1)'}
+                            >
+                                <FaBell size={20} />
+                                <span style={{ position: 'absolute', top: '-6px', right: '-6px', background: '#e74c3c', color: 'white', fontSize: '0.75rem', fontWeight: 'bold', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #1a1a2e' }}>
+                                    2
+                                </span>
+                            </button>
+
+                            {isNotificationsOpen && (
+                                <div style={{ 
+                                    position: 'absolute', top: '55px', left: '0', width: '350px', 
+                                    background: '#1a1a2e', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.1)', 
+                                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 1000, overflow: 'hidden',
+                                    animation: 'fadeIn 0.2s ease', textAlign: 'right'
+                                }}>
+                                    <div style={{ padding: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                                        <strong style={{ color: 'white' }}>أحدث الإشعارات</strong>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--txt-mut)' }}>تنبيهين جدد</span>
+                                    </div>
+                                    
+                                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                        {/* 🚀 استخدام Link بدل onClick للتحويل */}
+                                        <Link 
+                                            href="/teacher/courses/course-1"
+                                            onClick={() => setIsNotificationsOpen(false)}
+                                            style={{ display: 'block', textDecoration: 'none', padding: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)', transition: '0.2s', background: 'rgba(52, 152, 219, 0.05)' }}
+                                            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(52, 152, 219, 0.1)'}
+                                            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(52, 152, 219, 0.05)'}
+                                        >
+                                            <div style={{ color: 'white', fontSize: '0.95rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <FaCircle color="#3498db" size={8}/> تصحيح مقالي (كورس الفيزياء)
+                                            </div>
+                                            <div style={{ color: 'var(--txt-mut)', fontSize: '0.85rem', marginTop: '5px', lineHeight: '1.5' }}>
+                                                يوجد إجابات بانتظار تصحيحك في امتحان المحاضرة الأولى.
+                                            </div>
+                                        </Link>
+
+                                        <Link 
+                                            href="/teacher/alerts"
+                                            onClick={() => setIsNotificationsOpen(false)}
+                                            style={{ display: 'block', textDecoration: 'none', padding: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)', transition: '0.2s' }}
+                                            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                                        >
+                                            <div style={{ color: 'white', fontSize: '0.95rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <FaCircle color="#2ecc71" size={8}/> اشتراك طالب جديد
+                                            </div>
+                                            <div style={{ color: 'var(--txt-mut)', fontSize: '0.85rem', marginTop: '5px', lineHeight: '1.5' }}>
+                                                قام الطالب أحمد محمد بشراء كورس المراجعة.
+                                            </div>
+                                        </Link>
+                                    </div>
+                                    
+                                    {/* 🚀 الزرار النهائي بيستخدم Link للتحويل المضمون */}
+                                    <Link 
+                                        href="/teacher/alerts"
+                                        onClick={() => setIsNotificationsOpen(false)}
+                                        style={{ display: 'block', textAlign: 'center', width: '100%', background: 'transparent', color: 'var(--p-purple)', textDecoration: 'none', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px', fontWeight: 'bold', fontSize: '0.9rem' }}
+                                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                                        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                                    >
+                                        عرض جميع الإشعارات
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{ textAlign: 'left', direction: 'ltr', paddingRight: '15px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
                             <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--txt)' }}>أ. محمد ناصر</div>
                             <div style={{ color: 'var(--txt-mut)', fontSize: '0.8rem' }}>مدرس لغة عربية</div>
                         </div>
@@ -117,7 +203,6 @@ const isActive = pathname === item.path || pathname.startsWith(`${item.path}/`);
                     </div>
                 </div>
 
-                {/* هنا بيتم حقن الصفحات (Children) */}
                 <div style={{ padding: '30px', flex: 1, overflowY: 'auto' }}>
                     {children}
                 </div>

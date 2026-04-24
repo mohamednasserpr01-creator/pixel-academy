@@ -82,7 +82,8 @@ export const useCourseStudents = (courseId: string, curriculum: Lecture[]) => {
     };
 
     const handleExportAllExams = () => {
-        const baseHeaders = ['الرقم التسلسلي', 'اسم الطالب', 'رقم الطالب', 'المحافظة', 'نوع الاشتراك'];
+        // 🚀 تم إضافة تاريخ الانضمام هنا
+        const baseHeaders = ['الرقم التسلسلي', 'اسم الطالب', 'رقم الطالب', 'المحافظة', 'تاريخ الانضمام', 'نوع الاشتراك'];
         const examHeaders: string[] = [];
         const examIds: string[] = []; 
         curriculum.forEach(lec => {
@@ -94,7 +95,11 @@ export const useCourseStudents = (courseId: string, curriculum: Lecture[]) => {
         if (examIds.length === 0) return alert("لا يوجد امتحانات لتصديرها.");
 
         const data = filteredStudents.map(student => {
-            const row: any = { 'الرقم التسلسلي': student.serialNumber, 'اسم الطالب': student.name, 'رقم الطالب': student.phone, 'المحافظة': student.governorate, 'نوع الاشتراك': translateSubscription(student.paymentMethod) };
+            // 🚀 تم إضافة تاريخ الانضمام هنا في الداتا
+            const row: any = { 
+                'الرقم التسلسلي': student.serialNumber, 'اسم الطالب': student.name, 'رقم الطالب': student.phone, 
+                'المحافظة': student.governorate, 'تاريخ الانضمام': student.enrolledAt, 'نوع الاشتراك': translateSubscription(student.paymentMethod) 
+            };
             examIds.forEach((id, index) => {
                 const record = student.trackingDetails.find(t => t.itemId === id);
                 if (!record || record.status === 'not_started') row[examHeaders[index]] = 'غياب';
@@ -126,10 +131,11 @@ export const useCourseStudents = (courseId: string, curriculum: Lecture[]) => {
 
         if (absentees.length === 0) return alert("ممتاز! لا يوجد طلاب متخلفين عن كل الامتحانات.");
 
-        const headers = ['الرقم التسلسلي', 'اسم الطالب', 'رقم الطالب', 'رقم ولي الأمر', 'المحافظة', 'نوع الاشتراك', 'ملاحظة'];
+        // 🚀 تم إضافة تاريخ الانضمام هنا
+        const headers = ['الرقم التسلسلي', 'اسم الطالب', 'رقم الطالب', 'رقم ولي الأمر', 'المحافظة', 'تاريخ الانضمام', 'نوع الاشتراك', 'ملاحظة'];
         const data = absentees.map(s => ({
             'الرقم التسلسلي': s.serialNumber, 'اسم الطالب': s.name, 'رقم الطالب': s.phone, 'رقم ولي الأمر': s.parentPhone,
-            'المحافظة': s.governorate, 'نوع الاشتراك': translateSubscription(s.paymentMethod), 'ملاحظة': 'لم يمتحن أي امتحان بالكورس'
+            'المحافظة': s.governorate, 'تاريخ الانضمام': s.enrolledAt, 'نوع الاشتراك': translateSubscription(s.paymentMethod), 'ملاحظة': 'لم يمتحن أي امتحان بالكورس'
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
@@ -182,7 +188,7 @@ export const useCourseStudents = (courseId: string, curriculum: Lecture[]) => {
     return {
         students: paginatedStudents, totalStudents: filteredStudents.length, currentPage, setCurrentPage, totalPages,
         isLoading, searchQuery, setSearchQuery, 
-        courseStats, // 🚀 تصدير الإحصائيات للواجهة
+        courseStats, 
         handleExportCourseEnrolled, handleExportAllExams, handleExportCourseAbsentees, handleExportMasterExcel,
         handleToggleBlock, isAddStudentModalOpen, setIsAddStudentModalOpen,
     };

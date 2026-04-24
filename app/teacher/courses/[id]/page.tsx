@@ -17,8 +17,11 @@ import { PricingTab } from '@/features/course-builder/components/PricingTab';
 import { StudentsTab } from '@/features/course-builder/components/StudentsTab'; 
 
 import { ItemReportsModal } from '@/features/course-builder/components/ItemReportsModal'; 
-// 🚀 استدعاء مودال تقرير المحاضرة الكاملة
 import { LectureReportsModal } from '@/features/course-builder/components/LectureReportsModal'; 
+import { ItemGradingModal } from '@/features/course-builder/components/ItemGradingModal'; 
+
+// 🚀 استدعاء محرك الإشعارات
+import { NotificationsTab } from '@/features/course-builder/components/NotificationsTab';
 
 import { Lecture, LectureItem as LectureItemType } from '@/features/course-builder/types/curriculum.types';
 
@@ -56,8 +59,8 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
     const [settingsItem, setSettingsItem] = useState<{ lectureId: string, item: LectureItemType } | null>(null);
     
     const [reportItem, setReportItem] = useState<LectureItemType | null>(null);
-    // 🚀 State جديدة لتقرير المحاضرة كاملة
     const [reportLecture, setReportLecture] = useState<Lecture | null>(null);
+    const [gradingItem, setGradingItem] = useState<LectureItemType | null>(null);
 
     useEffect(() => { setIsMounted(true); }, []);
 
@@ -106,8 +109,8 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
         <div style={{ animation: 'fadeIn 0.4s ease', maxWidth: '1000px', margin: '0 auto', paddingBottom: '50px' }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px', marginTop: '30px' }}>
-                <div style={{ display: 'flex', gap: '15px' }}>
-                    <button onClick={() => router.push('/teacher/courses')} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--txt)', width: '40px', height: '40px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                    <button onClick={() => router.push('/teacher/courses')} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--txt)', width: '45px', height: '45px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <FaArrowRight />
                     </button>
                     <div>
@@ -119,9 +122,12 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                         </div>
                     </div>
                 </div>
-                <button style={{ background: 'var(--p-purple)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FaSave /> حفظ التعديلات
-                </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <button style={{ background: 'var(--p-purple)', color: '#fff', border: 'none', padding: '12px 25px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaSave size={18} /> حفظ التعديلات
+                    </button>
+                </div>
             </div>
 
             <div style={{ display: 'flex', gap: '20px', background: 'rgba(0,0,0,0.2)', padding: '15px 20px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.02)', marginBottom: '30px' }}>
@@ -169,8 +175,8 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                                     onOpenContentPicker={(lecId: string) => setActiveLectureId(lecId)}
                                     onOpenSettings={(item: LectureItemType) => setSettingsItem({ lectureId: lecture.id, item })}
                                     onOpenReports={(item: LectureItemType) => setReportItem(item)}
-                                    // 🚀 تمرير الدالة الجديدة للمودال
                                     onOpenLectureReports={(lec: Lecture) => setReportLecture(lec)}
+                                    onOpenGrading={(item: LectureItemType) => setGradingItem(item)}
                                 />
                             ))}
                         </DndContext>
@@ -178,44 +184,17 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                 )}
 
                 {activeTab === 'pricing' && <PricingTab curriculum={curriculum} />}
+                {activeTab === 'students' && <StudentsTab courseId={resolvedParams.id} curriculum={curriculum} />}
                 
-                {activeTab === 'students' && (
-                    <StudentsTab courseId={resolvedParams.id} curriculum={curriculum} />
-                )}
-                
-                {activeTab === 'notifications' && <div style={{ color: 'var(--txt-mut)', textAlign: 'center', padding: '50px' }}>محرك إشعارات الواتساب (قيد الإنشاء)</div>}
+                {/* 🚀 حقن المحرك هنا بدل قيد الإنشاء */}
+                {activeTab === 'notifications' && <NotificationsTab curriculum={curriculum} />}
             </div>
 
-            <ContentPickerModal 
-                isOpen={!!activeLectureId} 
-                onClose={() => setActiveLectureId(null)} 
-                onSelect={(item: Partial<LectureItemType>) => {
-                    if (activeLectureId) addItem(activeLectureId, { ...item, id: `new-${Date.now()}` } as LectureItemType);
-                }} 
-            />
-
-            <ItemSettingsDrawer 
-                isOpen={!!settingsItem} 
-                onClose={() => setSettingsItem(null)} 
-                item={settingsItem?.item || null} 
-                curriculum={curriculum}
-                onSave={(itemId: string, updates: Partial<LectureItemType>) => {
-                    if (settingsItem) updateItem(settingsItem.lectureId, itemId, updates);
-                }}
-            />
-
-            <ItemReportsModal 
-                isOpen={!!reportItem} 
-                onClose={() => setReportItem(null)} 
-                item={reportItem} 
-            />
-
-            {/* 🚀 حقن مودال التقرير الشامل للمحاضرة */}
-            <LectureReportsModal 
-                isOpen={!!reportLecture} 
-                onClose={() => setReportLecture(null)} 
-                lecture={reportLecture} 
-            />
+            <ContentPickerModal isOpen={!!activeLectureId} onClose={() => setActiveLectureId(null)} onSelect={(item: Partial<LectureItemType>) => { if (activeLectureId) addItem(activeLectureId, { ...item, id: `new-${Date.now()}` } as LectureItemType); }} />
+            <ItemSettingsDrawer isOpen={!!settingsItem} onClose={() => setSettingsItem(null)} item={settingsItem?.item || null} curriculum={curriculum} onSave={(itemId: string, updates: Partial<LectureItemType>) => { if (settingsItem) updateItem(settingsItem.lectureId, itemId, updates); }} />
+            <ItemReportsModal isOpen={!!reportItem} onClose={() => setReportItem(null)} item={reportItem} />
+            <LectureReportsModal isOpen={!!reportLecture} onClose={() => setReportLecture(null)} lecture={reportLecture} />
+            <ItemGradingModal isOpen={!!gradingItem} onClose={() => setGradingItem(null)} item={gradingItem} />
 
         </div>
     );
