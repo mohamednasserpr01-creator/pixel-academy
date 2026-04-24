@@ -25,7 +25,8 @@ export const QuestionCard = memo(({ q, index, language, dispatch }: Props) => {
     };
 
     return (
-        <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '15px', padding: '25px', marginBottom: '25px', position: 'relative' }}>
+        /* 🚀 تنظيف خلفية السؤال لتتجاوب مع اللايت والدارك */
+        <div style={{ background: 'var(--card)', border: '1px solid rgba(128,128,128,0.2)', borderRadius: '15px', padding: '25px', marginBottom: '25px', position: 'relative' }}>
             <button onClick={() => dispatch({ type: 'DELETE_QUESTION', payload: q.id })} style={{ position: 'absolute', top: '15px', left: '15px', background: 'rgba(231,76,60,0.1)', color: 'var(--danger)', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', zIndex: 10 }}><FaTrash /></button>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
                 <span style={{ background: '#f39c12', color: 'white', padding: '5px 10px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 'bold' }}>سؤال {index + 1}</span>
@@ -39,7 +40,7 @@ export const QuestionCard = memo(({ q, index, language, dispatch }: Props) => {
             
             <div style={{ marginBottom: '20px' }}>
                 {!q.previewUrl ? (
-                    <label style={{ background: 'rgba(255,255,255,0.02)', color: '#f39c12', border: '1px dashed rgba(255,255,255,0.1)', padding: '15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%' }}>
+                    <label style={{ background: 'rgba(128,128,128,0.05)', color: '#f39c12', border: '1px dashed rgba(128,128,128,0.2)', padding: '15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%' }}>
                         <FaImage size={20} /> إرفاق صورة للسؤال
                         <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleLocalImageUpload(e, (url) => updateQ('previewUrl', url))} />
                     </label>
@@ -53,23 +54,24 @@ export const QuestionCard = memo(({ q, index, language, dispatch }: Props) => {
 
             {/* 💡 الاختيار من متعدد */}
             {q.type === 'mcq' && (
-                <div style={{ background: 'rgba(0,0,0,0.1)', padding: '15px', borderRadius: '10px' }}>
+                <div style={{ background: 'rgba(128,128,128,0.05)', padding: '15px', borderRadius: '10px' }}>
                     <label style={{ display: 'block', color: 'var(--txt-mut)', marginBottom: '15px', fontWeight: 'bold' }}>الاختيارات (حدد الإجابة الصحيحة)</label>
                     {q.options?.map((opt, optIdx) => (
                         <div key={opt.id} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
                             <input type="radio" name={`hw_correct_${q.id}`} checked={opt.isCorrect} onChange={() => { const newOptions = q.options!.map(o => ({ ...o, isCorrect: o.id === opt.id })); updateQ('options', newOptions); }} style={{ width: '20px', height: '20px', accentColor: '#f39c12', cursor: 'pointer' }} />
                             
                             <div style={{ flex: 1 }}>
-                                <input type="text" value={opt.text} onChange={(e) => { const newOptions = [...q.options!]; newOptions[optIdx].text = e.target.value; updateQ('options', newOptions); }} placeholder={`نص الاختيار`} style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px', outline: 'none', fontWeight: 'bold', fontSize: '1.1rem' }} />
+                                {/* 🚀 تنظيف إنبوتات الإختيارات */}
+                                <input type="text" value={opt.text} onChange={(e) => { const newOptions = [...q.options!]; newOptions[optIdx].text = e.target.value; updateQ('options', newOptions); }} placeholder={`نص الاختيار`} style={{ width: '100%', padding: '12px', background: 'rgba(128,128,128,0.05)', border: '1px solid rgba(128,128,128,0.2)', color: 'var(--txt)', borderRadius: '8px', outline: 'none', fontWeight: 'bold', fontSize: '1.1rem' }} />
                             </div>
                             
                             {!opt.previewUrl ? (
-                                <label style={{ background: 'rgba(255,255,255,0.05)', color: '#f39c12', border: '1px dashed rgba(255,255,255,0.2)', padding: '12px', borderRadius: '8px', cursor: 'pointer', height: '42px', display: 'flex', alignItems: 'center' }}>
+                                <label style={{ background: 'rgba(128,128,128,0.05)', color: '#f39c12', border: '1px dashed rgba(128,128,128,0.2)', padding: '12px', borderRadius: '8px', cursor: 'pointer', height: '42px', display: 'flex', alignItems: 'center' }}>
                                     <FaImage size={18} />
                                     <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleLocalImageUpload(e, (url) => { const newOptions = [...q.options!]; newOptions[optIdx].previewUrl = url; updateQ('options', newOptions); })} />
                                 </label>
                             ) : (
-                                <div style={{ position: 'relative', width: '80px', height: '42px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <div style={{ position: 'relative', width: '80px', height: '42px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(128,128,128,0.2)' }}>
                                     <img src={opt.previewUrl} alt="opt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     <button onClick={() => { URL.revokeObjectURL(opt.previewUrl!); const newOptions = [...q.options!]; newOptions[optIdx].previewUrl = null; updateQ('options', newOptions); }} style={{ position: 'absolute', top: '0', right: '0', background: 'var(--danger)', color: 'white', border: 'none', width: '100%', height: '100%', cursor: 'pointer' }}><FaTrash size={12}/></button>
                                 </div>
@@ -88,12 +90,12 @@ export const QuestionCard = memo(({ q, index, language, dispatch }: Props) => {
 
             {/* 💡 صح وخطأ */}
             {q.type === 'tf' && (
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', background: 'rgba(0,0,0,0.1)', padding: '15px', borderRadius: '10px' }}>
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', background: 'rgba(128,128,128,0.05)', padding: '15px', borderRadius: '10px' }}>
                     <label style={{ color: 'var(--txt-mut)', fontWeight: 'bold' }}>الإجابة الصحيحة:</label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', cursor: 'pointer' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--txt)', cursor: 'pointer' }}>
                         <input type="radio" checked={q.isTrueFalseCorrect === true} onChange={() => updateQ('isTrueFalseCorrect', true)} style={{ accentColor: '#2ecc71', width: '18px', height: '18px' }} /> صح
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', cursor: 'pointer' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--txt)', cursor: 'pointer' }}>
                         <input type="radio" checked={q.isTrueFalseCorrect === false} onChange={() => updateQ('isTrueFalseCorrect', false)} style={{ accentColor: '#e74c3c', width: '18px', height: '18px' }} /> خطأ
                     </label>
                 </div>
@@ -101,16 +103,16 @@ export const QuestionCard = memo(({ q, index, language, dispatch }: Props) => {
 
             {/* 💡 السؤال المقالي */}
             {q.type === 'essay' && (
-                <div style={{ background: 'rgba(0,0,0,0.1)', padding: '15px', borderRadius: '10px' }}>
+                <div style={{ background: 'rgba(128,128,128,0.05)', padding: '15px', borderRadius: '10px' }}>
                     <label style={{ display: 'block', color: 'var(--txt-mut)', marginBottom: '10px', fontWeight: 'bold' }}>كيف يجيب الطالب على هذا السؤال؟</label>
                     <select 
                         value={q.essayFormat || 'both'} 
                         onChange={(e) => updateQ('essayFormat', e.target.value)}
-                        style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px', outline: 'none' }}
+                        style={{ width: '100%', padding: '12px', background: 'rgba(128,128,128,0.05)', border: '1px solid rgba(128,128,128,0.2)', color: 'var(--txt)', borderRadius: '8px', outline: 'none' }}
                     >
-                        <option value="both" style={{background: '#1e1e2d'}}>كتابة نص + إرفاق صورة (موصى به)</option>
-                        <option value="text" style={{background: '#1e1e2d'}}>كتابة نص فقط</option>
-                        <option value="image" style={{background: '#1e1e2d'}}>إرفاق صورة للحل فقط (بدون كتابة)</option>
+                        <option value="both" style={{background: 'var(--card)', color: 'var(--txt)'}}>كتابة نص + إرفاق صورة (موصى به)</option>
+                        <option value="text" style={{background: 'var(--card)', color: 'var(--txt)'}}>كتابة نص فقط</option>
+                        <option value="image" style={{background: 'var(--card)', color: 'var(--txt)'}}>إرفاق صورة للحل فقط (بدون كتابة)</option>
                     </select>
                 </div>
             )}

@@ -42,7 +42,7 @@ export default function TeacherDashboardPage() {
             <div style={{ background: 'linear-gradient(135deg, rgba(108,92,231,0.15), rgba(255,0,127,0.05))', border: '1px solid rgba(108,92,231,0.3)', borderRight: '5px solid var(--p-purple)', padding: '30px', borderRadius: '15px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
                 <div>
                     <h2 style={{ fontSize: '2rem', color: 'white', marginBottom: '8px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        مرحباً بك يا هندسة! 🎓
+                        مرحباً بك يا مستر 🎓
                     </h2>
                     <p style={{ color: 'var(--txt-mut)', fontSize: '1.1rem', margin: 0 }}>
                         هنا غرفة العمليات الخاصة بك.. راقب أداء المنصة، تفاعل طلابك، وإيراداتك في مكان واحد.
