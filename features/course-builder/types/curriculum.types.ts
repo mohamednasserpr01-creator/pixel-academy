@@ -1,63 +1,45 @@
-// ==========================================
-// 💡 أنواع المحتوى وشروط الفتح
-// ==========================================
-// 🚀 تم إضافة 'makeup_exam' لحل الإيرور وربطها بتقرير الإكسيل
-export type ContentType = 'lesson' | 'homework' | 'homework_lesson' | 'exam' | 'makeup_exam';
+export type ItemType = 'lesson' | 'exam' | 'homework' | 'homework_lesson' | 'makeup_exam';
 
-export type PrerequisiteType = 'none' | 'prev' | 'specific_exam' | 'specific_hw';
-
-// ==========================================
-// 💡 واجهة إعدادات شرط الفتح
-// ==========================================
-export interface Prerequisite {
-    type: PrerequisiteType;
-    targetId?: string; // ID الامتحان أو الواجب المطلوب
-}
-
-// ==========================================
-// 💡 واجهة عنصر المحتوى (الحصة/الامتحان)
-// ==========================================
 export interface LectureItem {
     id: string;
-    type: ContentType;
+    type: ItemType;
     title: string;
     
-    // إعدادات العرض (مرفقات)
     hasPdf?: boolean;
     hasRef?: boolean;
     
-    // إعدادات البزنس لوجيك المشتركة
-    prerequisite?: Prerequisite;
-    viewsLimit?: number;       // للفيديوهات
+    viewsLimit?: number;
+    passScore?: number;
+    issueCertificate?: boolean;
+    certificateMinScore?: number;
+    requireRetake?: boolean;
+    retakeThreshold?: number;
+    showAnswers?: boolean;
+    isRetakeOnly?: boolean;
+    altExamId?: string;
     
-    // 🚀 إعدادات الامتحانات
-    passScore?: number;           // درجة النجاح
-    issueCertificate?: boolean;   // هل يصدر شهادة؟
-    certificateMinScore?: number; // الدرجة المطلوبة لإصدار الشهادة
-    requireRetake?: boolean;      // تفعيل امتحان الإعادة؟
-    retakeThreshold?: number;     // النسبة التي تسمح بإعادة الامتحان
-    altExamId?: string;           // ID الامتحان البديل (امتحان الإعادة)
-    showAnswers?: boolean;        // السماح برؤية الإجابات للطالب
-    isRetakeOnly?: boolean;       // 🚀 (الجديد) تخصيص كـ "امتحان إعادة فقط" (يُخفى عن الطالب افتراضياً)
+    prerequisite?: {
+        type: 'none' | 'prev' | 'specific_exam' | 'specific_hw';
+        targetId?: string;
+    };
+
+    publishDate?: string;
+    expireAfterDays?: number;
+    stopNewPurchases?: boolean;
+    lockForAll?: boolean;
 }
 
-// ==========================================
-// 💡 واجهة المحاضرة
-// ==========================================
 export interface Lecture {
     id: string;
     title: string;
     items: LectureItem[];
-    requirePrevious?: boolean;    // إجبار الطالب على اجتياز المحاضرة السابقة
+    requirePrevious?: boolean;
 }
 
-// ==========================================
-// 💡 واجهة الأفعال (Actions) للـ Reducer
-// ==========================================
-export type CurriculumAction =
-    | { type: 'ADD_LECTURE'; payload: { title: string } }
+export type CurriculumAction = 
+    | { type: 'ADD_LECTURE'; payload?: any } 
     | { type: 'UPDATE_LECTURE'; payload: { lectureId: string; updates: Partial<Lecture> } }
-    | { type: 'REMOVE_LECTURE'; payload: { lectureId: string } }
+    | { type: 'REMOVE_LECTURE'; payload: { lectureId: string } } 
     | { type: 'ADD_ITEM'; payload: { lectureId: string; item: LectureItem } }
     | { type: 'UPDATE_ITEM'; payload: { lectureId: string; itemId: string; updates: Partial<LectureItem> } }
     | { type: 'REMOVE_ITEM'; payload: { lectureId: string; itemId: string } }

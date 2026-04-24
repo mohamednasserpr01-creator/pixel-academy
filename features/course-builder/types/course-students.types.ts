@@ -1,19 +1,18 @@
-export type TrackingStatus = 'not_started' | 'in_progress' | 'completed' | 'passed' | 'failed' | 'submitted' | 'not_submitted';
-export type ItemType = 'lesson' | 'exam' | 'homework' | 'makeup_exam';
+export type SubscriptionType = 'manual_teacher' | 'wallet' | 'offer_code' | 'course_code' | 'lecture_code' | 'full_course' | 'specific_items';
 
-export interface ItemTrackingRecord {
+export interface TrackingDetail {
     itemId: string;
-    type: ItemType;
-    status: TrackingStatus;
-    score?: number;
-    maxScore?: number;
+    type: 'lesson' | 'exam' | 'homework' | 'homework_lesson' | 'makeup_exam' | string;
+    status: 'completed' | 'pending' | 'failed' | 'passed' | string;
+    itemTitle?: string; // خليناها اختياري عشان الداتا القديمة بتاعتك
     watchPercentage?: number;
     viewsCount?: number;
-    lastAccessedAt?: string;
+    score?: number;
+    maxScore?: number;
+    views?: number;
+    date?: string;
+    [key: string]: any;
 }
-
-// 🚀 أنواع الاشتراك الدقيقة
-export type SubscriptionType = 'manual_teacher' | 'wallet' | 'offer_code' | 'course_code' | 'lecture_code';
 
 export interface EnrolledStudent {
     id: string;
@@ -24,12 +23,16 @@ export interface EnrolledStudent {
     governorate: string;
     address: string;
     enrolledAt: string;
-    
-    paymentMethod: SubscriptionType; // 🚀 اتحدثت
-    paymentDetails: string;
-    
+    paymentMethod: SubscriptionType;
+    paymentDetails?: any;
     isBlocked: boolean;
-    progress: number;
-    accessibleLectures: string[]; 
-    trackingDetails: ItemTrackingRecord[];
+    purchasedItems?: string[];
+    trackingDetails: TrackingDetail[];
+    progress?: number; // 🚀 دي الخاصية اللي كانت عاملة أزمة في 4 ملفات
+    
+    // خصائص احتياطية للـ Backward Compatibility
+    enrollmentDate?: string;
+    subscriptionType?: SubscriptionType;
+    isSuspended?: boolean;
+    tracking?: TrackingDetail[];
 }

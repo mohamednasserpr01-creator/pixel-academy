@@ -12,7 +12,7 @@ interface Props {
 export const StudentProfileModal: React.FC<Props> = ({ isOpen, onClose, student }) => {
     if (!isOpen || !student) return null;
 
-    // 🚀 دالة لترجمة نوع الاشتراك لعربي (حل الإيرور الثاني)
+    // 🚀 دالة لترجمة نوع الاشتراك لعربي
     const getSubscriptionLabel = (type: string) => {
         const labels: Record<string, string> = {
             'manual_teacher': 'إضافة يدوية من المدرس',
@@ -23,6 +23,8 @@ export const StudentProfileModal: React.FC<Props> = ({ isOpen, onClose, student 
         };
         return labels[type] || type;
     };
+
+    const progressValue = student.progress || 0; // 🚀 تأمين القيمة عشان الـ TypeScript
 
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
@@ -54,7 +56,6 @@ export const StudentProfileModal: React.FC<Props> = ({ isOpen, onClose, student 
                         <h4 style={{ color: 'var(--txt-mut)', margin: '0 0 10px 0' }}>حالة التسجيل</h4>
                         <div style={{ color: 'white', fontSize: '0.95rem', lineHeight: '1.8' }}>
                             <div><strong>التاريخ:</strong> {student.enrolledAt}</div>
-                            {/* 👈 التعديل هنا: استخدام دالة الترجمة */}
                             <div><strong>الدفع:</strong> <span style={{ color: '#f39c12' }}>{getSubscriptionLabel(student.paymentMethod)}</span> ({student.paymentDetails})</div>
                             <div><strong>حالة الحساب:</strong> <span style={{ color: student.isBlocked ? '#e74c3c' : '#2ecc71', fontWeight: 'bold' }}>{student.isBlocked ? 'محظور من الكورس' : 'نشط'}</span></div>
                         </div>
@@ -63,9 +64,9 @@ export const StudentProfileModal: React.FC<Props> = ({ isOpen, onClose, student 
                         <h4 style={{ color: 'var(--txt-mut)', margin: '0 0 10px 0' }}>نسبة إنجاز المنهج</h4>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', height: '100%', paddingBottom: '10px' }}>
                             <div style={{ flex: 1, background: 'rgba(255,255,255,0.1)', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
-                                <div style={{ width: `${student.progress}%`, background: student.progress > 80 ? '#2ecc71' : student.progress > 40 ? '#f1c40f' : '#e74c3c', height: '100%' }}></div>
+                                <div style={{ width: `${progressValue}%`, background: progressValue > 80 ? '#2ecc71' : progressValue > 40 ? '#f1c40f' : '#e74c3c', height: '100%' }}></div>
                             </div>
-                            <strong style={{ color: 'white', fontSize: '1.4rem' }}>{student.progress}%</strong>
+                            <strong style={{ color: 'white', fontSize: '1.4rem' }}>{progressValue}%</strong>
                         </div>
                     </div>
                 </div>

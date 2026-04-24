@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { FaCog, FaTimes, FaLock, FaEye, FaCertificate, FaUserSecret } from 'react-icons/fa';
+import { FaCog, FaTimes, FaLock, FaEye, FaCertificate, FaUserSecret, FaClock } from 'react-icons/fa';
 import { Lecture, LectureItem } from '../types/curriculum.types';
 import { CustomSelect } from './CustomSelect';
 
@@ -20,13 +20,18 @@ export const ItemSettingsDrawer: React.FC<Props> = ({ isOpen, onClose, item, cur
     const [viewsLimit, setViewsLimit] = useState(3);
     const [passScore, setPassScore] = useState(50);
     
-    // إعدادات الامتحانات
     const [issueCertificate, setIssueCertificate] = useState(false);
     const [certificateMinScore, setCertificateMinScore] = useState(80);
     const [requireRetake, setRequireRetake] = useState(false);
     const [retakeThreshold, setRetakeThreshold] = useState(50);
     const [showAnswers, setShowAnswers] = useState(false);
-    const [isRetakeOnly, setIsRetakeOnly] = useState(false); // 🚀 الـ State الجديدة
+    const [isRetakeOnly, setIsRetakeOnly] = useState(false); 
+
+    // 🚀 States لإعدادات الإغلاق والصلاحية
+    const [publishDate, setPublishDate] = useState('');
+    const [expireAfterDays, setExpireAfterDays] = useState(0);
+    const [stopNewPurchases, setStopNewPurchases] = useState(false);
+    const [lockForAll, setLockForAll] = useState(false);
 
     useEffect(() => {
         if (item) {
@@ -42,7 +47,13 @@ export const ItemSettingsDrawer: React.FC<Props> = ({ isOpen, onClose, item, cur
             setRequireRetake(item.requireRetake || false);
             setRetakeThreshold(item.retakeThreshold || 50);
             setShowAnswers(item.showAnswers || false);
-            setIsRetakeOnly(item.isRetakeOnly || false); // 🚀 قراءة القيمة المحفوظة
+            setIsRetakeOnly(item.isRetakeOnly || false); 
+
+            // 🚀 جلب إعدادات النشر لو موجودة
+            setPublishDate((item as any).publishDate || '');
+            setExpireAfterDays((item as any).expireAfterDays || 0);
+            setStopNewPurchases((item as any).stopNewPurchases || false);
+            setLockForAll((item as any).lockForAll || false);
         }
     }, [item]);
 
@@ -53,15 +64,17 @@ export const ItemSettingsDrawer: React.FC<Props> = ({ isOpen, onClose, item, cur
 
     const handleSave = () => {
         onSave(item.id, {
-            viewsLimit,
-            passScore,
-            altExamId: requireRetake && altExam !== 'none' ? altExam : undefined,
-            issueCertificate,
-            certificateMinScore: issueCertificate ? certificateMinScore : undefined,
-            requireRetake,
-            retakeThreshold: requireRetake ? retakeThreshold : undefined,
-            showAnswers,
-            isRetakeOnly, // 🚀 حفظ القيمة
+            viewsLimit, passScore, altExamId: requireRetake && altExam !== 'none' ? altExam : undefined,
+            issueCertificate, certificateMinScore: issueCertificate ? certificateMinScore : undefined,
+            requireRetake, retakeThreshold: requireRetake ? retakeThreshold : undefined,
+            showAnswers, isRetakeOnly,
+            
+            // 🚀 حفظ الإعدادات الجديدة
+            publishDate: publishDate as any,
+            expireAfterDays: expireAfterDays as any,
+            stopNewPurchases: stopNewPurchases as any,
+            lockForAll: lockForAll as any,
+
             prerequisite: {
                 type: prereqType as any,
                 targetId: prereqType === 'specific_exam' ? selectedExam : prereqType === 'specific_hw' ? selectedHw : undefined
@@ -85,33 +98,61 @@ export const ItemSettingsDrawer: React.FC<Props> = ({ isOpen, onClose, item, cur
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-                    {/* شرط الفتح */}
+                    
                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '15px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.02)' }}>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', marginBottom: '10px', fontSize: '0.95rem' }}><FaLock color="#e74c3c"/> شرط فتح المحتوى</label>
                         <CustomSelect 
                             value={prereqType} onChange={setPrereqType} 
                             options={[
                                 { value: 'none', label: 'بدون شروط (متاح فوراً)' },
-                                { value: 'prev', label: 'بعد مشاهدة/إكمال العنصر السابق' },
+                                { value: 'prev', label: 'بعد إكمال العنصر السابق' },
                                 { value: 'specific_exam', label: 'بعد النجاح في امتحان معين' },
                                 { value: 'specific_hw', label: 'بعد تسليم واجب معين' }
                             ]} 
                         />
                         {prereqType === 'specific_exam' && (
-                            <div style={{ marginTop: '15px' }}>
-                                <span style={{ fontSize: '0.8rem', color: 'var(--txt-mut)', display: 'block', marginBottom: '5px' }}>اختر الامتحان المطلوب:</span>
-                                <CustomSelect value={selectedExam} onChange={setSelectedExam} options={courseExams.map(ex => ({ value: ex.id, label: ex.title }))} />
-                            </div>
+                            <div style={{ marginTop: '15px' }}><span style={{ fontSize: '0.8rem', color: 'var(--txt-mut)', display: 'block', marginBottom: '5px' }}>اختر الامتحان:</span><CustomSelect value={selectedExam} onChange={setSelectedExam} options={courseExams.map(ex => ({ value: ex.id, label: ex.title }))} /></div>
                         )}
                         {prereqType === 'specific_hw' && (
-                            <div style={{ marginTop: '15px' }}>
-                                <span style={{ fontSize: '0.8rem', color: 'var(--txt-mut)', display: 'block', marginBottom: '5px' }}>اختر الواجب المطلوب تسليمه:</span>
-                                <CustomSelect value={selectedHw} onChange={setSelectedHw} options={courseHomeworks.map(hw => ({ value: hw.id, label: hw.title }))} />
-                            </div>
+                            <div style={{ marginTop: '15px' }}><span style={{ fontSize: '0.8rem', color: 'var(--txt-mut)', display: 'block', marginBottom: '5px' }}>اختر الواجب:</span><CustomSelect value={selectedHw} onChange={setSelectedHw} options={courseHomeworks.map(hw => ({ value: hw.id, label: hw.title }))} /></div>
                         )}
                     </div>
 
-                    {/* إعدادات الفيديو */}
+                    {/* 🚀 إعدادات الجدولة والصلاحية (الجديدة) */}
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <h4 style={{ margin: '0 0 15px 0', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}><FaClock color="#f1c40f"/> إعدادات الجدولة والصلاحية</h4>
+                        <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', color: 'var(--txt-mut)', marginBottom: '8px', fontSize: '0.85rem' }}>تاريخ إتاحة المحتوى</label>
+                            <input type="datetime-local" value={publishDate} onChange={e => setPublishDate(e.target.value)} style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px', outline: 'none' }} />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', color: 'var(--txt-mut)', marginBottom: '8px', fontSize: '0.85rem' }}>تُغلق تلقائياً بعد (يوم من نزولها أو شرائها)</label>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                <input type="number" min={0} value={expireAfterDays} onChange={e => setExpireAfterDays(Number(e.target.value))} style={{ width: '80px', padding: '10px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px', outline: 'none', textAlign: 'center' }} />
+                                <span style={{ fontSize: '0.8rem', color: '#f1c40f' }}>{expireAfterDays === 0 ? 'متاحة دائماً' : 'أيام'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 🚀 إعدادات الغلق المنفصل (الجديدة) */}
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <h4 style={{ margin: '0 0 15px 0', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}><FaLock color="#e74c3c"/> إعدادات الغلق المتقدمة</h4>
+                        <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px', cursor: 'pointer' }}>
+                            <div>
+                                <div style={{ color: 'white', fontSize: '0.9rem', marginBottom: '3px' }}>إيقاف بيع الحصة منفردة</div>
+                                <div style={{ color: 'var(--txt-mut)', fontSize: '0.75rem' }}>متاحة فقط لمن اشتراها أو اشترى الكورس مسبقاً.</div>
+                            </div>
+                            <input type="checkbox" checked={stopNewPurchases} onChange={e => setStopNewPurchases(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#f39c12' }} />
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                            <div>
+                                <div style={{ color: '#e74c3c', fontSize: '0.9rem', marginBottom: '3px', fontWeight: 'bold' }}>غلق الحصة تماماً</div>
+                                <div style={{ color: 'var(--txt-mut)', fontSize: '0.75rem' }}>منع الدخول حتى للمشتركين فيها.</div>
+                            </div>
+                            <input type="checkbox" checked={lockForAll} onChange={e => setLockForAll(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#e74c3c' }} />
+                        </label>
+                    </div>
+
                     {(item.type === 'lesson' || item.type === 'homework_lesson') && (
                         <div style={{ background: 'rgba(0,0,0,0.2)', padding: '15px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.02)' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', marginBottom: '10px', fontSize: '0.95rem' }}><FaEye color="#3498db"/> عدد المشاهدات المسموحة</label>
@@ -119,50 +160,31 @@ export const ItemSettingsDrawer: React.FC<Props> = ({ isOpen, onClose, item, cur
                         </div>
                     )}
 
-                    {/* إعدادات الامتحانات */}
                     {item.type === 'exam' && (
                         <div style={{ background: 'rgba(0,0,0,0.2)', padding: '15px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.02)' }}>
                             <h4 style={{ color: 'white', margin: '0 0 15px 0', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px' }}><FaCertificate color="#f1c40f"/> إعدادات الامتحان الخاصة</h4>
-                            
-                            {/* 🚀 إعداد إخفاء الامتحان (مخصص للإعادة فقط) */}
                             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#e67e22', cursor: 'pointer', marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                 <input type="checkbox" checked={isRetakeOnly} onChange={(e) => setIsRetakeOnly(e.target.checked)} style={{ accentColor: '#e67e22', width: '16px', height: '16px' }} />
-                                <span style={{ flex: 1 }}>تخصيص هذا الامتحان للإعادة فقط (يُخفى عن الطالب افتراضياً)</span>
-                                <FaUserSecret size={18} />
+                                <span style={{ flex: 1 }}>تخصيص للإعادة فقط (يُخفى افتراضياً)</span><FaUserSecret size={18} />
                             </label>
-
                             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'white', cursor: 'pointer', marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                 <input type="checkbox" checked={showAnswers} onChange={(e) => setShowAnswers(e.target.checked)} style={{ accentColor: 'var(--p-purple)', width: '16px', height: '16px' }} />
-                                السماح للطالب بمراجعة الإجابات الصحيحة بعد التسليم
+                                مراجعة الإجابات الصحيحة بعد التسليم
                             </label>
-
                             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--txt-mut)', cursor: 'pointer', marginBottom: '10px' }}>
-                                <input type="checkbox" checked={issueCertificate} onChange={(e) => setIssueCertificate(e.target.checked)} />
-                                إصدار شهادة تقدير للطالب
+                                <input type="checkbox" checked={issueCertificate} onChange={(e) => setIssueCertificate(e.target.checked)} /> إصدار شهادة تقدير
                             </label>
                             {issueCertificate && (
-                                <div style={{ marginBottom: '15px', paddingRight: '25px', animation: 'fadeIn 0.2s ease' }}>
-                                    <span style={{ fontSize: '0.8rem', color: 'var(--txt-mut)', display: 'block', marginBottom: '5px' }}>الدرجة المطلوبة للشهادة (%):</span>
-                                    <input type="number" value={certificateMinScore} onChange={(e) => setCertificateMinScore(Number(e.target.value))} style={{ width: '100%', padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '5px', outline: 'none' }} />
-                                </div>
+                                <div style={{ marginBottom: '15px', paddingRight: '25px', animation: 'fadeIn 0.2s ease' }}><span style={{ fontSize: '0.8rem', color: 'var(--txt-mut)', display: 'block', marginBottom: '5px' }}>الدرجة المطلوبة للشهادة (%):</span><input type="number" value={certificateMinScore} onChange={(e) => setCertificateMinScore(Number(e.target.value))} style={{ width: '100%', padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '5px', outline: 'none' }} /></div>
                             )}
-
                             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--txt-mut)', cursor: 'pointer', marginBottom: '10px', marginTop: '15px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '15px' }}>
-                                <input type="checkbox" checked={requireRetake} onChange={(e) => setRequireRetake(e.target.checked)} disabled={isRetakeOnly} />
-                                تفعيل امتحان إعادة (للامتحانات الأساسية)
+                                <input type="checkbox" checked={requireRetake} onChange={(e) => setRequireRetake(e.target.checked)} disabled={isRetakeOnly} /> تفعيل امتحان إعادة
                             </label>
                             {requireRetake && !isRetakeOnly && (
                                 <div style={{ paddingRight: '25px', animation: 'fadeIn 0.2s ease' }}>
-                                    <div style={{ marginBottom: '10px' }}>
-                                        <span style={{ fontSize: '0.8rem', color: 'var(--txt-mut)', display: 'block', marginBottom: '5px' }}>يُسمح بدخول الإعادة لمن حصل على أقل من (%):</span>
-                                        <input type="number" value={retakeThreshold} onChange={(e) => setRetakeThreshold(Number(e.target.value))} style={{ width: '100%', padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '5px', outline: 'none' }} />
-                                    </div>
+                                    <div style={{ marginBottom: '10px' }}><span style={{ fontSize: '0.8rem', color: 'var(--txt-mut)', display: 'block', marginBottom: '5px' }}>يُسمح للإعادة لمن حصل أقل من (%):</span><input type="number" value={retakeThreshold} onChange={(e) => setRetakeThreshold(Number(e.target.value))} style={{ width: '100%', padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '5px', outline: 'none' }} /></div>
                                     <span style={{ fontSize: '0.8rem', color: 'var(--txt-mut)', display: 'block', marginBottom: '5px' }}>اختر امتحان الإعادة المرتبط:</span>
-                                    <CustomSelect 
-                                        value={altExam} onChange={setAltExam} 
-                                        // 💡 بنفلتر الامتحانات عشان نعرض الامتحانات المخصصة للإعادة فقط
-                                        options={[{ value: 'none', label: 'اختر امتحان...' }, ...courseExams.filter(ex => ex.id !== item.id).map(ex => ({ value: ex.id, label: ex.title + (ex.isRetakeOnly ? ' (مخصص للإعادة)' : '') }))]} 
-                                    />
+                                    <CustomSelect value={altExam} onChange={setAltExam} options={[{ value: 'none', label: 'اختر امتحان...' }, ...courseExams.filter(ex => ex.id !== item.id).map(ex => ({ value: ex.id, label: ex.title + (ex.isRetakeOnly ? ' (مخصص للإعادة)' : '') }))]} />
                                 </div>
                             )}
                         </div>

@@ -10,7 +10,8 @@ export const ItemReportsModal: React.FC<Props> = ({ isOpen, onClose, item }) => 
     const [searchQuery, setSearchQuery] = useState('');
 
     const isVideoItem = item ? ['lesson', 'homework_lesson'].includes(item.type) : false;
-    const isExam = item ? ['exam', 'homework', 'makeup_exam'].includes(item.type) : false;
+    // 🚀 السطر ده اللي اتعدل عشان نحل مشكلة المقارنة
+    const isExam = item ? ['exam', 'homework', 'makeup_exam'].includes(item.type as string) : false;
 
     const mockReports = useMemo(() => {
         if (!item) return [];
