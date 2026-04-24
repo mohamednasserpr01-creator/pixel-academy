@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx'; 
-import { FaBookOpen, FaChevronDown, FaChevronUp, FaPlus, FaFileExcel, FaChartBar } from 'react-icons/fa';
+import { FaBookOpen, FaChevronDown, FaChevronUp, FaPlus, FaFileExcel, FaChartBar, FaCog } from 'react-icons/fa';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Lecture, LectureItem as LectureItemType } from '../types/curriculum.types';
 import { LectureItem } from './LectureItem';
@@ -14,10 +14,11 @@ interface Props {
     onOpenSettings: (item: LectureItemType) => void;
     onOpenReports: (item: LectureItemType) => void; 
     onOpenLectureReports: (lecture: Lecture) => void;
-    onOpenGrading: (item: LectureItemType) => void; // 🚀 استقبال دالة التصحيح
+    onOpenGrading: (item: LectureItemType) => void; 
+    onOpenLectureSettings?: (lecture: Lecture) => void; // 🚀 ضفنا الدالة هنا
 }
 
-export const LectureCard: React.FC<Props> = ({ lecture, onUpdateLecture, onOpenContentPicker, onOpenSettings, onOpenReports, onOpenLectureReports, onOpenGrading }) => {
+export const LectureCard: React.FC<Props> = ({ lecture, onUpdateLecture, onOpenContentPicker, onOpenSettings, onOpenReports, onOpenLectureReports, onOpenGrading, onOpenLectureSettings }) => {
     const [isExpanded, setIsExpanded] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(lecture.title);
@@ -59,7 +60,6 @@ export const LectureCard: React.FC<Props> = ({ lecture, onUpdateLecture, onOpenC
         };
 
         const workbook = XLSX.utils.book_new();
-
         const wsAll = XLSX.utils.json_to_sheet(mockStudents.map(formatRow), { header: fullHeaders });
         wsAll['!views'] = [{ rightToLeft: true, state: 'frozen', ySplit: 1 }];
         wsAll['!cols'] = fullHeaders.map(() => ({ wch: 20 }));
@@ -91,7 +91,16 @@ export const LectureCard: React.FC<Props> = ({ lecture, onUpdateLecture, onOpenC
                     </div>
                 </div>
 
-                <div className={styles.cardControls} style={{ alignSelf: 'flex-start', marginTop: '5px' }}>
+                <div className={styles.cardControls} style={{ alignSelf: 'flex-start', marginTop: '5px', display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    {/* 🚀 الزرار بقى بينادي الدالة المضبوطة */}
+                    <button 
+                        onClick={() => onOpenLectureSettings && onOpenLectureSettings(lecture)} 
+                        style={{ background: 'rgba(155, 89, 182, 0.2)', color: '#9b59b6', border: '1px solid rgba(155, 89, 182, 0.4)', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', fontWeight: 'bold', transition: '0.2s' }} 
+                        title="إعدادات المحاضرة"
+                    >
+                        <FaCog /> الإعدادات
+                    </button>
+
                     <button onClick={() => onOpenLectureReports(lecture)} style={{ background: 'rgba(241, 196, 15, 0.2)', color: '#f1c40f', border: '1px solid #f1c40f', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem' }} title="عرض تقرير المحاضرة"><FaChartBar /> التقرير</button>
                     <button onClick={handleExportLectureReport} style={{ background: 'rgba(39, 174, 96, 0.2)', color: '#2ecc71', border: '1px solid #27ae60', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem' }} title="تصدير تقرير إكسيل لهذه المحاضرة بكل حصصها"><FaFileExcel /> الإكسيل</button>
                     <span className={styles.itemsCount}>{lecture.items.length} عناصر</span>
@@ -108,7 +117,7 @@ export const LectureCard: React.FC<Props> = ({ lecture, onUpdateLecture, onOpenC
                                 item={item} 
                                 onOpenSettings={onOpenSettings} 
                                 onOpenReports={onOpenReports} 
-                                onOpenGrading={onOpenGrading} // 🚀 تمرير دالة التصحيح للعنصر
+                                onOpenGrading={onOpenGrading} 
                             />
                         ))}
                     </SortableContext>

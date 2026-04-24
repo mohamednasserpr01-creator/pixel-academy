@@ -4,10 +4,8 @@ export interface LectureItem {
     id: string;
     type: ItemType;
     title: string;
-    
     hasPdf?: boolean;
     hasRef?: boolean;
-    
     viewsLimit?: number;
     passScore?: number;
     issueCertificate?: boolean;
@@ -17,16 +15,10 @@ export interface LectureItem {
     showAnswers?: boolean;
     isRetakeOnly?: boolean;
     altExamId?: string;
-    
     prerequisite?: {
         type: 'none' | 'prev' | 'specific_exam' | 'specific_hw';
         targetId?: string;
     };
-
-    publishDate?: string;
-    expireAfterDays?: number;
-    stopNewPurchases?: boolean;
-    lockForAll?: boolean;
 }
 
 export interface Lecture {
@@ -34,6 +26,11 @@ export interface Lecture {
     title: string;
     items: LectureItem[];
     requirePrevious?: boolean;
+    // 🚀 الخصائص اتنقلت هنا للمحاضرة عشان هي الوحدة البيعية
+    publishDate?: string;
+    expireAfterDays?: number;
+    stopNewPurchases?: boolean;
+    lockForAll?: boolean;
 }
 
 export type CurriculumAction = 

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { FaCog, FaTimes, FaLock, FaEye, FaCertificate, FaUserSecret, FaClock } from 'react-icons/fa';
+import { FaCog, FaTimes, FaLock, FaEye, FaCertificate, FaUserSecret } from 'react-icons/fa';
 import { Lecture, LectureItem } from '../types/curriculum.types';
 import { CustomSelect } from './CustomSelect';
 
@@ -27,12 +27,6 @@ export const ItemSettingsDrawer: React.FC<Props> = ({ isOpen, onClose, item, cur
     const [showAnswers, setShowAnswers] = useState(false);
     const [isRetakeOnly, setIsRetakeOnly] = useState(false); 
 
-    // 🚀 States لإعدادات الإغلاق والصلاحية
-    const [publishDate, setPublishDate] = useState('');
-    const [expireAfterDays, setExpireAfterDays] = useState(0);
-    const [stopNewPurchases, setStopNewPurchases] = useState(false);
-    const [lockForAll, setLockForAll] = useState(false);
-
     useEffect(() => {
         if (item) {
             setPrereqType(item.prerequisite?.type || 'none');
@@ -48,12 +42,6 @@ export const ItemSettingsDrawer: React.FC<Props> = ({ isOpen, onClose, item, cur
             setRetakeThreshold(item.retakeThreshold || 50);
             setShowAnswers(item.showAnswers || false);
             setIsRetakeOnly(item.isRetakeOnly || false); 
-
-            // 🚀 جلب إعدادات النشر لو موجودة
-            setPublishDate((item as any).publishDate || '');
-            setExpireAfterDays((item as any).expireAfterDays || 0);
-            setStopNewPurchases((item as any).stopNewPurchases || false);
-            setLockForAll((item as any).lockForAll || false);
         }
     }, [item]);
 
@@ -69,12 +57,6 @@ export const ItemSettingsDrawer: React.FC<Props> = ({ isOpen, onClose, item, cur
             requireRetake, retakeThreshold: requireRetake ? retakeThreshold : undefined,
             showAnswers, isRetakeOnly,
             
-            // 🚀 حفظ الإعدادات الجديدة
-            publishDate: publishDate as any,
-            expireAfterDays: expireAfterDays as any,
-            stopNewPurchases: stopNewPurchases as any,
-            lockForAll: lockForAll as any,
-
             prerequisite: {
                 type: prereqType as any,
                 targetId: prereqType === 'specific_exam' ? selectedExam : prereqType === 'specific_hw' ? selectedHw : undefined
@@ -116,41 +98,6 @@ export const ItemSettingsDrawer: React.FC<Props> = ({ isOpen, onClose, item, cur
                         {prereqType === 'specific_hw' && (
                             <div style={{ marginTop: '15px' }}><span style={{ fontSize: '0.8rem', color: 'var(--txt-mut)', display: 'block', marginBottom: '5px' }}>اختر الواجب:</span><CustomSelect value={selectedHw} onChange={setSelectedHw} options={courseHomeworks.map(hw => ({ value: hw.id, label: hw.title }))} /></div>
                         )}
-                    </div>
-
-                    {/* 🚀 إعدادات الجدولة والصلاحية (الجديدة) */}
-                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <h4 style={{ margin: '0 0 15px 0', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}><FaClock color="#f1c40f"/> إعدادات الجدولة والصلاحية</h4>
-                        <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', color: 'var(--txt-mut)', marginBottom: '8px', fontSize: '0.85rem' }}>تاريخ إتاحة المحتوى</label>
-                            <input type="datetime-local" value={publishDate} onChange={e => setPublishDate(e.target.value)} style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px', outline: 'none' }} />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', color: 'var(--txt-mut)', marginBottom: '8px', fontSize: '0.85rem' }}>تُغلق تلقائياً بعد (يوم من نزولها أو شرائها)</label>
-                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                <input type="number" min={0} value={expireAfterDays} onChange={e => setExpireAfterDays(Number(e.target.value))} style={{ width: '80px', padding: '10px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px', outline: 'none', textAlign: 'center' }} />
-                                <span style={{ fontSize: '0.8rem', color: '#f1c40f' }}>{expireAfterDays === 0 ? 'متاحة دائماً' : 'أيام'}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* 🚀 إعدادات الغلق المنفصل (الجديدة) */}
-                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <h4 style={{ margin: '0 0 15px 0', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}><FaLock color="#e74c3c"/> إعدادات الغلق المتقدمة</h4>
-                        <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px', cursor: 'pointer' }}>
-                            <div>
-                                <div style={{ color: 'white', fontSize: '0.9rem', marginBottom: '3px' }}>إيقاف بيع الحصة منفردة</div>
-                                <div style={{ color: 'var(--txt-mut)', fontSize: '0.75rem' }}>متاحة فقط لمن اشتراها أو اشترى الكورس مسبقاً.</div>
-                            </div>
-                            <input type="checkbox" checked={stopNewPurchases} onChange={e => setStopNewPurchases(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#f39c12' }} />
-                        </label>
-                        <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                            <div>
-                                <div style={{ color: '#e74c3c', fontSize: '0.9rem', marginBottom: '3px', fontWeight: 'bold' }}>غلق الحصة تماماً</div>
-                                <div style={{ color: 'var(--txt-mut)', fontSize: '0.75rem' }}>منع الدخول حتى للمشتركين فيها.</div>
-                            </div>
-                            <input type="checkbox" checked={lockForAll} onChange={e => setLockForAll(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#e74c3c' }} />
-                        </label>
                     </div>
 
                     {(item.type === 'lesson' || item.type === 'homework_lesson') && (

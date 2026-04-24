@@ -4,7 +4,7 @@ export interface TrackingDetail {
     itemId: string;
     type: 'lesson' | 'exam' | 'homework' | 'homework_lesson' | 'makeup_exam' | string;
     status: 'completed' | 'pending' | 'failed' | 'passed' | string;
-    itemTitle?: string; // خليناها اختياري عشان الداتا القديمة بتاعتك
+    itemTitle?: string; 
     watchPercentage?: number;
     viewsCount?: number;
     score?: number;
@@ -28,9 +28,11 @@ export interface EnrolledStudent {
     isBlocked: boolean;
     purchasedItems?: string[];
     trackingDetails: TrackingDetail[];
-    progress?: number; // 🚀 دي الخاصية اللي كانت عاملة أزمة في 4 ملفات
+    progress?: number; 
     
-    // خصائص احتياطية للـ Backward Compatibility
+    // 🚀 الخاصية الجديدة اللي بتحدد المحاضرات المفتوحة للطالب
+    accessibleLectures?: string[]; 
+    
     enrollmentDate?: string;
     subscriptionType?: SubscriptionType;
     isSuspended?: boolean;
