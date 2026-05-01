@@ -1,4 +1,3 @@
-// FILE: app/admin/layout.tsx
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -7,7 +6,8 @@ import {
     FaUserShield, FaChalkboardTeacher, FaUserGraduate, 
     FaLayerGroup, FaGift, FaBarcode, FaHeartbeat, 
     FaStore, FaBars, FaBell, FaSearch, FaShoppingCart, 
-    FaHeadset, FaCircle, FaEnvelope, FaComments, FaWallet
+    FaHeadset, FaCircle, FaEnvelope, FaComments, FaWallet,
+    FaDatabase // 🚀 إضافة أيقونة بنك المعرفة
 } from 'react-icons/fa';
 import styles from './Admin.module.css';
 
@@ -39,7 +39,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: 'الطلاب', path: '/admin/students', icon: <FaUserGraduate /> },
         { name: 'الصفوف والشعب', path: '/admin/grades', icon: <FaLayerGroup /> },
         { name: 'العروض', path: '/admin/offers', icon: <FaGift /> },
-        { name: 'الأكواد', path: '/admin/codes', icon: <FaBarcode /> },
+        { name: 'أكواد الشحن', path: '/admin/codes', icon: <FaBarcode /> },
+        // 🚀 إضافة رابط أكواد بنك المعرفة الجديد
+        { name: 'أكواد بنك المعرفة', path: '/admin/knowledge-bank-codes', icon: <FaDatabase /> }, 
         { name: 'وحدة المتجر', path: '/admin/store', icon: <FaStore /> },
         { name: 'الدعم النفسي', path: '/admin/support', icon: <FaHeartbeat /> },
         { name: 'رسائل الدعم', path: '/admin/messages', icon: <FaComments /> },
@@ -63,7 +65,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className={styles.logoArea}>
                     <h1>PIXEL <span style={{ color: 'white' }}>ADMIN</span></h1>
                 </div>
-                <nav className={styles.navLinks}>
+                <nav className={styles.navLinks} style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 100px)' }}> {/* 🚀 إضافة سكرول للناف بار عشان اللينكات كترت */}
                     {adminMenu.map((item, index) => {
                         const isActive = pathname === item.path;
                         return (

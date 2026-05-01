@@ -1,6 +1,5 @@
-// FILE: app/admin/offers/[id]/page.tsx
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
     FaArrowRight, FaUserTie, FaBookOpen, FaHistory, 
@@ -12,7 +11,6 @@ import { Input } from '../../../../components/ui/Input';
 import { useToast } from '../../../../context/ToastContext';
 import styles from '../Offers.module.css';
 
-// 💡 Types 
 interface Teacher { id: number; name: string; addedAt: string; }
 interface Course { id: number; name: string; teacher: string; addedAt: string; }
 interface Student { id: number; name: string; phone: string; addedAt: string; }
@@ -26,8 +24,8 @@ interface Offer {
     students: Student[]; modHistory: ModHistory[];
 }
 
-export default function OfferDetailsPage() {
-    const params = useParams();
+export default function OfferDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+    const resolvedParams = use(params);
     const router = useRouter();
     const { showToast } = useToast();
     const [mounted, setMounted] = useState(false);
@@ -35,15 +33,13 @@ export default function OfferDetailsPage() {
     const [offer, setOffer] = useState<Offer | null>(null);
     const [activeTab, setActiveTab] = useState<'teachers' | 'courses' | 'students' | 'history'>('teachers');
 
-    // Modals
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isAddTeacherModalOpen, setIsAddTeacherModalOpen] = useState(false);
     const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
 
     useEffect(() => {
-        // محاكاة جلب بيانات العرض من الـ API باستخدام ה- ID
         setOffer({
-            id: Number(params.id), title: 'عرض بطل الثانوية', stage: 'الصف الثالث الثانوي', stream: 'علمي علوم',
+            id: Number(resolvedParams.id), title: 'عرض بطل الثانوية', stage: 'الصف الثالث الثانوي', stream: 'علمي علوم',
             startDate: '2026-04-01', endDate: '2026-05-01', originalPrice: 1000, price: 600, 
             status: 'active', image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=500',
             desc: 'أقوى باقة مراجعات نهائية تشمل الفيزياء، الكيمياء، والأحياء.', codesCount: 842,
@@ -53,7 +49,7 @@ export default function OfferDetailsPage() {
             modHistory: [{ id: 1, by: 'Administrator', date: '4/6/2026', action: 'إنشاء العرض', from: '-', to: '-' }]
         });
         setMounted(true);
-    }, [params.id]);
+    }, [resolvedParams.id]);
 
     const handleAddTeacher = () => {
         if(!offer) return;
@@ -79,7 +75,6 @@ export default function OfferDetailsPage() {
 
             <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
                 
-                {/* 💡 الكارت الأيمن (بيانات العرض) */}
                 <div style={{ flex: '1 1 350px', background: 'var(--card)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', position: 'sticky', top: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: '30px' }}>
                     <div style={{ width: '120px', height: '120px', borderRadius: '50%', border: '4px solid var(--bg)', marginTop: '-60px', marginBottom: '20px', overflow: 'hidden' }}>
                         <img src={offer.image} alt="offer" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -92,13 +87,13 @@ export default function OfferDetailsPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>عدد الكورسات:</span> <strong style={{ color: 'white' }}>{offer.courses.length}</strong></div>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>المشتركين:</span> <strong style={{ color: 'white' }}>{offer.students.length}</strong></div>
                     </div>
+                    
+                    {/* 🚀 الزرار الزيادة اتشال من هنا */}
                     <div style={{ marginTop: '25px', width: '85%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <Button variant="primary" fullWidth icon={<FaBarcode />} onClick={() => router.push(`/admin/offers/${offer.id}/codes`)} style={{ background: 'linear-gradient(45deg, var(--p-purple), #ff007f)', border: 'none' }}>إدارة الأكواد ({offer.codesCount})</Button>
                         <Button variant="outline" fullWidth icon={<FaEdit />} onClick={() => setIsEditModalOpen(true)}>تعديل العرض</Button>
                     </div>
                 </div>
 
-                {/* 💡 التابات اليسرى */}
                 <div style={{ flex: '2 1 700px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <div className={styles.tabsContainer}>
                         <button className={`${styles.tabBtn} ${activeTab === 'teachers' ? styles.active : ''}`} onClick={() => setActiveTab('teachers')}><FaUserTie/> المدرسين</button>

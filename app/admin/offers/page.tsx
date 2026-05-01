@@ -1,4 +1,3 @@
-// FILE: app/admin/offers/page.tsx
 "use client";
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -104,9 +103,16 @@ export default function OffersListPage() {
                     <h1 className={styles.pageTitle}><FaGift style={{ color: 'var(--p-purple)' }} /> إدارة العروض والمبيعات</h1>
                     <p className={styles.pageSubtitle}>أضف وتتبع العروض الخاصة بالمنصة بكل سهولة.</p>
                 </div>
-                <Button variant="primary" icon={<FaPlus />} onClick={() => setIsAddModalOpen(true)} style={{ background: 'linear-gradient(45deg, var(--p-purple), #ff007f)', border: 'none' }}>
-                    إضافة عرض جديد
-                </Button>
+                
+                {/* 🚀 الزرارين: زر إضافة العرض وزر السجل المركزي للأكواد */}
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <Button variant="outline" icon={<FaBarcode />} onClick={() => router.push('/admin/offers/all-codes')} style={{ color: 'var(--txt)', borderColor: 'rgba(255,255,255,0.2)' }}>
+                        السجل المركزي للأكواد
+                    </Button>
+                    <Button variant="primary" icon={<FaPlus />} onClick={() => setIsAddModalOpen(true)} style={{ background: 'linear-gradient(45deg, var(--p-purple), #ff007f)', border: 'none' }}>
+                        إضافة عرض جديد
+                    </Button>
+                </div>
             </div>
 
             <div className={styles.statsGrid}>
@@ -184,7 +190,7 @@ export default function OffersListPage() {
                 )}
             </div>
 
-            {/* 💡 مودال إضافة العرض (تأكيد وجود المرحلة والصورة) */}
+            {/* 💡 مودال إضافة العرض */}
             <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="إضافة عرض جديد" maxWidth="800px">
                 <div className={styles.formGrid} style={{ maxHeight: '75vh', overflowY: 'auto', paddingRight: '10px' }}>
                     <div style={{ gridColumn: '1 / -1' }}>
