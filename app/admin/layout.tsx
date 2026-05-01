@@ -7,7 +7,7 @@ import {
     FaLayerGroup, FaGift, FaBarcode, FaHeartbeat, 
     FaStore, FaBars, FaBell, FaSearch, FaShoppingCart, 
     FaHeadset, FaCircle, FaEnvelope, FaComments, FaWallet,
-    FaDatabase // 🚀 إضافة أيقونة بنك المعرفة
+    FaDatabase, FaBullhorn // 🚀 إضافة أيقونة حملات الإشعارات
 } from 'react-icons/fa';
 import styles from './Admin.module.css';
 
@@ -40,11 +40,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: 'الصفوف والشعب', path: '/admin/grades', icon: <FaLayerGroup /> },
         { name: 'العروض', path: '/admin/offers', icon: <FaGift /> },
         { name: 'أكواد الشحن', path: '/admin/codes', icon: <FaBarcode /> },
-        // 🚀 إضافة رابط أكواد بنك المعرفة الجديد
         { name: 'أكواد بنك المعرفة', path: '/admin/knowledge-bank-codes', icon: <FaDatabase /> }, 
         { name: 'وحدة المتجر', path: '/admin/store', icon: <FaStore /> },
         { name: 'الدعم النفسي', path: '/admin/support', icon: <FaHeartbeat /> },
         { name: 'رسائل الدعم', path: '/admin/messages', icon: <FaComments /> },
+        // 🚀 إضافة رابط حملات الإشعارات
+        { name: 'حملات الإشعارات', path: '/admin/broadcast', icon: <FaBullhorn /> }, 
     ];
 
     // داتا الإشعارات
