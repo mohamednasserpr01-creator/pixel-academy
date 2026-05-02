@@ -9,8 +9,11 @@ import ChatBox from '../chat/ChatBox';
 export default function PlatformUI({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     
-    // 💡 لو اللينك بيبدأ بـ /admin أو /teacher هنخفي كل دوشة الطلاب
-    const isDashboardPanel = pathname?.startsWith('/admin') || pathname?.startsWith('/teacher');
+    // 💡 التعديل هنا: السيستم هيخفي الهيدر والفوتر فقط لو المسار /teacher بالظبط أو بيكمل بـ /teacher/ (عشان ميتلخبطش مع /teachers)
+    const isDashboardPanel = 
+        pathname?.startsWith('/admin') || 
+        pathname?.startsWith('/teacher/') || 
+        pathname === '/teacher';
 
     if (isDashboardPanel) {
         return <>{children}</>;

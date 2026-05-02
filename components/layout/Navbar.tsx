@@ -4,22 +4,17 @@ import Link from 'next/link';
 import { 
     FaHome, FaChalkboardTeacher, FaPlayCircle, FaShoppingCart, 
     FaGamepad, FaUserShield, FaTimes, FaGlobe, FaMoon, FaSun, 
-    FaBars, FaUserCircle, FaSignOutAlt, FaThLarge, FaBookOpen, FaFolderOpen 
+    FaBars, FaUserCircle, FaSignOutAlt, FaThLarge, FaBookOpen, FaFolderOpen,
+    FaHandsHelping, FaTrophy // 💡 تم إضافة أيقونات الدعم النفسي وترتيب الطلاب
 } from 'react-icons/fa';
 
-// 💡 استدعاء محرك تسجيل الدخول
 import { useAuth } from '../../context/AuthContext';
-// 💡 استدعاء محرك الإعدادات (الثيم واللغة) اللي لسه عاملينه
 import { useSettings } from '../../context/SettingsContext';
 
-// 💡 لاحظ هنا: شيلنا (lang, theme, toggleLang, toggleMode) من الأقواس
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     
-    // 💡 استخدام البيانات من الـ Auth
     const { isLoggedIn, logout, user } = useAuth();
-    
-    // 💡 سحبنا الثيم واللغة من المركز السري بتاعنا بدل الـ Props
     const { theme, lang, toggleMode, toggleLang } = useSettings();
 
     return (
@@ -60,11 +55,14 @@ export default function Navbar() {
                         <li><Link href="/" onClick={() => setIsMenuOpen(false)}><FaHome /> {lang === 'ar' ? 'الرئيسية' : 'Home'}</Link></li>
                         <li><Link href="/teachers" onClick={() => setIsMenuOpen(false)}><FaChalkboardTeacher /> {lang === 'ar' ? 'المدرسين' : 'Teachers'}</Link></li>
                         <li><Link href="/courses" onClick={() => setIsMenuOpen(false)}><FaPlayCircle /> {lang === 'ar' ? 'الكورسات' : 'Courses'}</Link></li>
-                        <li><Link href="/store" onClick={() => setIsMenuOpen(false)}><FaShoppingCart /> {lang === 'ar' ? 'المتجر' : 'Store'}</Link></li>
                         <li><Link href="/knowledge-bank" onClick={() => setIsMenuOpen(false)}><FaBookOpen /> {lang === 'ar' ? 'بنك الأسئلة' : 'Questions'}</Link></li>
                         <li><Link href="/library" onClick={() => setIsMenuOpen(false)}><FaFolderOpen /> {lang === 'ar' ? 'المكتبة' : 'Library'}</Link></li>
                         
-                        {/* 👇 التعديل هنا: إضافة بوابة ولي الأمر باللون الذهبي 👇 */}
+                        {/* 👇 الإضافات الجديدة 👇 */}
+                        <li><Link href="/leaderboard" onClick={() => setIsMenuOpen(false)}><FaTrophy style={{ color: '#f1c40f' }} /> {lang === 'ar' ? 'ترتيب الطلاب' : 'Leaderboard'}</Link></li>
+                        <li><Link href="/support" onClick={() => setIsMenuOpen(false)}><FaHandsHelping style={{ color: '#0984e3' }} /> {lang === 'ar' ? 'الدعم النفسي' : 'Support'}</Link></li>
+                        
+                        <li><Link href="/store" onClick={() => setIsMenuOpen(false)}><FaShoppingCart /> {lang === 'ar' ? 'المتجر' : 'Store'}</Link></li>
                         <li><Link href="/parent" onClick={() => setIsMenuOpen(false)} style={{ color: '#f39c12' }}><FaUserShield /> {lang === 'ar' ? 'متابعة ولي الأمر' : 'Parent Portal'}</Link></li>
                         
                         {/* أزرار الموبايل (حسب حالة الدخول) */}
