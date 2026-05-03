@@ -1,84 +1,22 @@
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { FaPaperPlane, FaPlay, FaPause, FaCheckCircle, FaExclamationTriangle, FaTimes, FaWhatsapp } from 'react-icons/fa';
-import { Button } from '../../../../components/ui/Button';
+import { Button } from '../../../../components/ui/Button'; // تأكد من مسار الزرار حسب مشروعك
 
-// 💡 استدعاء المخزن السحري!
+// 💡 1. بنستدعي المخزن
 import { useBroadcastStore } from '../../../../features/broadcast/store/useBroadcastStore';
+// 💡 2. بنستدعي المايسترو (Custom Hook) اللي عملناه
+import { useBroadcastEngine } from '../../../../features/broadcast/hooks/useBroadcastEngine';
 
 export default function EngineStep() {
-    // 💡 بنسحب كل حاجة من المخزن (مفيش Props!)
-    const { 
-        targetCount, msgType, delaySeconds, logs = [], 
-        updateField, setStep 
-    } = useBroadcastStore();
+    // 💡 بنسحب الداتا اللي هنعرضها من المخزن
+    const { targetCount, msgType, delaySeconds, logs = [], setStep } = useBroadcastStore();
 
-    // 💡 حالة التشغيل والتقدم (Local States عشان دي واجهة تفاعلية)
-    const [isSending, setIsSending] = useState(false);
-    const [progress, setProgress] = useState(logs.length);
+    // 💡 بنسحب الأكشنز والـ Logic من الـ Hook النظيف بتاعنا
+    // وبنمررله دالة بتنقله لخطوة التقرير لما يخلص
+    const { isSending, progress, startEngine, stopEngine, resetEngine } = useBroadcastEngine(() => setStep(4));
 
-    // 💡 الـ Refs دي عشان نضمن إن الـ setInterval ميقرأش State قديمة أبداً
-    const isSendingRef = useRef(isSending);
-    const progressRef = useRef(progress);
-    const sentLogsRef = useRef<any[]>(logs);
-
-    useEffect(() => { isSendingRef.current = isSending; }, [isSending]);
-    useEffect(() => { progressRef.current = progress; }, [progress]);
-    useEffect(() => { sentLogsRef.current = logs; }, [logs]);
-
-    // 🚀 محرك الإرسال المضاد للرصاص
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
-        if (isSending) {
-            const speedMs = msgType === 'whatsapp' ? delaySeconds * 1000 : 200;
-
-            interval = setInterval(() => {
-                if (!isSendingRef.current) {
-                    clearInterval(interval);
-                    return;
-                }
-
-                if (progressRef.current >= targetCount) {
-                    clearInterval(interval);
-                    setIsSending(false);
-                    setTimeout(() => setStep(4), 1500);
-                    return;
-                }
-
-                const nextIndex = progressRef.current + 1;
-                const isSuccess = msgType === 'whatsapp' ? Math.random() > 0.15 : Math.random() > 0.02;
-                let failReason = '';
-                if (!isSuccess) failReason = msgType === 'whatsapp' ? 'الرقم غير مسجل بالواتساب' : 'حساب الطالب محظور';
-
-                const newLog = {
-                    id: `log-${Date.now()}-${nextIndex}`,
-                    studentName: `طالب مستهدف ${nextIndex}`,
-                    phone: `01${Math.floor(Math.random() * 900000000)}`,
-                    status: isSuccess ? 'success' : 'error',
-                    reason: !isSuccess ? failReason : undefined
-                };
-
-                progressRef.current = nextIndex;
-                const updatedLogs = [newLog, ...sentLogsRef.current];
-                
-                setProgress(progressRef.current);
-                updateField('logs', updatedLogs); // 💡 حفظ مباشر في المخزن
-
-                if (progressRef.current >= targetCount) {
-                    clearInterval(interval);
-                    setIsSending(false);
-                    setTimeout(() => setStep(4), 1500);
-                }
-            }, speedMs); 
-        }
-        return () => clearInterval(interval);
-    }, [isSending, targetCount, msgType, delaySeconds, setStep, updateField]);
-
-    const handleResetEngine = () => {
-        setIsSending(false);
-        setProgress(0);
-        updateField('logs', []);
-    };
+    const percentage = targetCount > 0 ? Math.round((progress / targetCount) * 100) : 0;
 
     return (
         <div style={{ background: 'var(--card)', padding: '30px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', animation: 'fadeIn 0.3s ease' }}>
@@ -109,29 +47,29 @@ export default function EngineStep() {
             <div style={{ marginBottom: '40px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--txt-mut)', marginBottom: '10px', fontWeight: 'bold', fontSize: '1.1rem' }}>
                     <span>تقدم الإرسال:</span>
-                    <span style={{ color: '#2ecc71' }}>{progress.toLocaleString()} / {targetCount.toLocaleString()} ( {targetCount > 0 ? Math.round((progress / targetCount) * 100) : 0}% )</span>
+                    <span style={{ color: '#2ecc71' }}>{progress.toLocaleString()} / {targetCount.toLocaleString()} ( {percentage}% )</span>
                 </div>
                 <div style={{ width: '100%', height: '25px', background: 'rgba(0,0,0,0.4)', borderRadius: '15px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', position: 'relative' }}>
-                    <div style={{ width: `${targetCount > 0 ? (progress / targetCount) * 100 : 0}%`, height: '100%', background: 'linear-gradient(90deg, var(--p-purple), #2ecc71)', transition: 'width 0.5s ease', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ width: `${percentage}%`, height: '100%', background: 'linear-gradient(90deg, var(--p-purple), #2ecc71)', transition: 'width 0.5s ease', position: 'relative', overflow: 'hidden' }}>
                         {isSending && <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, right: 0, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)', animation: 'skeleton-loading 1.5s infinite linear' }}></div>}
                     </div>
                 </div>
             </div>
 
-            {/* Controls */}
+            {/* Controls (بدون Logic، مجرد مناداة للـ Hook) */}
             <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginBottom: '30px', flexWrap: 'wrap' }}>
                 {!isSending && progress < targetCount && (
-                    <button onClick={() => setIsSending(true)} style={{ background: '#2ecc71', color: 'white', border: 'none', padding: '15px 40px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.2rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 5px 15px rgba(46, 204, 113, 0.4)' }}>
+                    <button onClick={startEngine} style={{ background: '#2ecc71', color: 'white', border: 'none', padding: '15px 40px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.2rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 5px 15px rgba(46, 204, 113, 0.4)' }}>
                         <FaPlay /> {progress === 0 ? 'بدء الإرسال فوراً' : 'استكمال الإرسال'}
                     </button>
                 )}
                 {isSending && (
-                    <button onClick={() => setIsSending(false)} style={{ background: '#f1c40f', color: '#000', border: 'none', padding: '15px 40px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.2rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 5px 15px rgba(241, 196, 15, 0.4)' }}>
+                    <button onClick={stopEngine} style={{ background: '#f1c40f', color: '#000', border: 'none', padding: '15px 40px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.2rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 5px 15px rgba(241, 196, 15, 0.4)' }}>
                         <FaPause /> إيقاف الإرسال مؤقتاً
                     </button>
                 )}
                 {progress < targetCount && (
-                    <button onClick={handleResetEngine} style={{ background: 'transparent', color: '#e74c3c', border: '1px solid #e74c3c', padding: '15px 30px', borderRadius: '10px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <button onClick={resetEngine} style={{ background: 'transparent', color: '#e74c3c', border: '1px solid #e74c3c', padding: '15px 30px', borderRadius: '10px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <FaTimes /> إلغاء وتصفير
                     </button>
                 )}
@@ -140,19 +78,19 @@ export default function EngineStep() {
             {/* Live Logs */}
             <div style={{ background: '#111', borderRadius: '15px', padding: '20px', border: '1px solid rgba(255,255,255,0.05)', height: '250px', overflowY: 'auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                    <h4 style={{ margin: 0, color: 'var(--txt-mut)', fontSize: '0.9rem' }}>سجل العمليات المباشر (Live Logs)</h4>
-                    <span style={{ fontSize: '0.8rem', color: '#3498db' }}>يتم تحديثه باستمرار...</span>
+                    <h4 style={{ margin: 0, color: 'var(--txt-mut)', fontSize: '0.9rem' }}>سجل العمليات (Backend Logs)</h4>
+                    <span style={{ fontSize: '0.8rem', color: '#3498db' }}>{isSending ? 'جاري الاستقبال...' : 'متوقف'}</span>
                 </div>
 
                 {logs.length === 0 ? (
-                    <div style={{ color: 'var(--txt-mut)', textAlign: 'center', opacity: 0.5, marginTop: '60px' }}>في انتظار بدء الإرسال...</div>
+                    <div style={{ color: 'var(--txt-mut)', textAlign: 'center', opacity: 0.5, marginTop: '60px' }}>في انتظار بدء الإرسال لبدء جلب السجلات من السيرفر...</div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {logs.map((log: any) => (
-                            <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '12px 15px', borderRadius: '8px', borderLeft: `3px solid ${log.status === 'success' ? '#2ecc71' : '#e74c3c'}` }}>
+                        {logs.slice(0, 50).map((log: any, idx: number) => (
+                            <div key={log.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '12px 15px', borderRadius: '8px', borderLeft: `3px solid ${log.status === 'success' ? '#2ecc71' : '#e74c3c'}` }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'white' }}>
                                     {log.status === 'success' ? <FaCheckCircle color="#2ecc71" /> : <FaExclamationTriangle color="#e74c3c" />}
-                                    <span>إرسال إلى <strong>{log.studentName}</strong> <span style={{ color: 'var(--txt-mut)', fontSize: '0.85rem', fontFamily: 'monospace' }}>({log.phone})</span></span>
+                                    <span>إرسال إلى <strong>{log.name}</strong> <span style={{ color: 'var(--txt-mut)', fontSize: '0.85rem', fontFamily: 'monospace' }}>({log.phone})</span></span>
                                 </div>
                                 <div style={{ color: log.status === 'success' ? '#2ecc71' : '#e74c3c', fontSize: '0.85rem', fontWeight: 'bold' }}>
                                     {log.status === 'success' ? 'نجاح' : `فشل: ${log.reason}`}
@@ -164,8 +102,8 @@ export default function EngineStep() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
-                <Button variant="outline" onClick={() => { setIsSending(false); setStep(2); }}>السابق: تعديل الرسالة</Button>
-                {progress >= targetCount && (
+                <Button variant="outline" onClick={() => { stopEngine(); setStep(2); }}>السابق: تعديل الرسالة</Button>
+                {progress >= targetCount && targetCount > 0 && (
                     <Button variant="primary" onClick={() => setStep(4)} style={{ background: 'var(--p-purple)', border: 'none' }}>الذهاب للتقرير النهائي 📊</Button>
                 )}
             </div>
