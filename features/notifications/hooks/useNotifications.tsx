@@ -1,3 +1,4 @@
+// FILE: features/notifications/hooks/useNotifications.tsx
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { AppNotification, PermissionStatus } from '../types/notification.types';
@@ -9,47 +10,65 @@ interface NotificationContextProps {
     requestPermission: () => Promise<void>;
     markAsRead: (id: string) => void;
     markAllAsRead: () => void;
-    deleteNotification: (id: string) => void; // 👈 جديدة
-    clearAll: () => void; // 👈 جديدة
+    deleteNotification: (id: string) => void;
+    clearAll: () => void;
     addNotification: (notification: Omit<AppNotification, 'id' | 'createdAt' | 'isRead'>) => void;
 }
 
 const NotificationContext = createContext<NotificationContextProps | undefined>(undefined);
 
-const mockNotifications: AppNotification[] = [
-    { id: '1', title: '🔥 محاضرة جديدة', body: 'تم رفع الدرس الأول في الكيمياء، ادخل شوفه دلوقتي.', createdAt: 'منذ 5 دقائق', isRead: false, type: 'info' },
-    { id: '2', title: '🎉 عاش يا بطل!', body: 'أنت من أوائل امتحان الفيزياء الأسبوعي.', createdAt: 'منذ ساعتين', isRead: false, type: 'success' }
-];
-
 export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
-    const [notifications, setNotifications] = useState<AppNotification[]>(mockNotifications);
+    const [notifications, setNotifications] = useState<AppNotification[]>([]);
     const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('idle');
 
-    // 💡 1. استرجاع الإشعارات من الـ Local Storage أول ما الصفحة تفتح
-    useEffect(() => {
+    // 💡 1. دالة لجلب الإشعارات من الـ Storage
+    const fetchNotifications = useCallback(() => {
         const savedNotifications = localStorage.getItem('pixel_notifications');
-        const savedPermission = localStorage.getItem('pixel_notif_permission') as PermissionStatus;
-        
         if (savedNotifications) {
             setNotifications(JSON.parse(savedNotifications));
         }
+    }, []);
+
+    // 💡 2. استرجاع الداتا أول مرة
+    useEffect(() => {
+        fetchNotifications();
+        const savedPermission = localStorage.getItem('pixel_notif_permission') as PermissionStatus;
         if (savedPermission) {
             setPermissionStatus(savedPermission);
         } else if (typeof window !== 'undefined' && 'Notification' in window) {
-            // تحديث الحالة بناءً على حالة المتصفح الحقيقية
             if (Notification.permission === 'granted') setPermissionStatus('granted');
             else if (Notification.permission === 'denied') setPermissionStatus('denied');
         }
-    }, []);
+    }, [fetchNotifications]);
 
-    // 💡 2. حفظ الإشعارات في الـ Local Storage مع كل تغيير
+    // 💡 3. حفظ الداتا مع كل تغيير
     useEffect(() => {
-        localStorage.setItem('pixel_notifications', JSON.stringify(notifications));
+        if (notifications.length > 0) {
+            localStorage.setItem('pixel_notifications', JSON.stringify(notifications));
+        }
     }, [notifications]);
+
+    // 🚀 4. السحر: الاستماع للـ Real-time Events (من نفس التاب أو من تاب تانية)
+    useEffect(() => {
+        // الاستماع للإيفنت اللي عملناه في الـ Broadcast API
+        const handleCustomEvent = () => fetchNotifications();
+        
+        // الاستماع لتغييرات الـ localStorage (لو المدرس فاتح من تاب تانية)
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'pixel_notifications') fetchNotifications();
+        };
+
+        window.addEventListener('pixel_new_notification', handleCustomEvent);
+        window.addEventListener('storage', handleStorageChange);
+        
+        return () => {
+            window.removeEventListener('pixel_new_notification', handleCustomEvent);
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, [fetchNotifications]);
 
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
-    // 💡 3. طلب إذن الإشعارات الحقيقي من المتصفح
     const requestPermission = async () => {
         setPermissionStatus('loading');
         if (!('Notification' in window)) {
@@ -57,50 +76,31 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             setPermissionStatus('denied');
             return;
         }
-
         try {
             const permission = await Notification.requestPermission();
             const status = permission === 'granted' ? 'granted' : 'denied';
             setPermissionStatus(status);
             localStorage.setItem('pixel_notif_permission', status);
         } catch (error) {
-            console.error('Error requesting notification permission:', error);
             setPermissionStatus('idle');
         }
     };
 
-    const markAsRead = (id: string) => {
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-    };
-
-    const markAllAsRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-    };
-
-    // 💡 4. دوال الحذف الجديدة
-    const deleteNotification = (id: string) => {
-        setNotifications(prev => prev.filter(n => n.id !== id));
-    };
-
-    const clearAll = () => {
-        setNotifications([]);
-    };
+    const markAsRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    const markAllAsRead = () => setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    const deleteNotification = (id: string) => setNotifications(prev => prev.filter(n => n.id !== id));
+    const clearAll = () => { setNotifications([]); localStorage.removeItem('pixel_notifications'); };
 
     const addNotification = useCallback((notif: Omit<AppNotification, 'id' | 'createdAt' | 'isRead'>) => {
-        const newNotif: AppNotification = {
-            ...notif,
-            id: Date.now().toString(),
-            createdAt: 'الآن',
-            isRead: false
-        };
-        setNotifications(prev => [newNotif, ...prev]);
+        const newNotif: AppNotification = { ...notif, id: Date.now().toString(), createdAt: 'الآن', isRead: false };
+        setNotifications(prev => {
+            const updated = [newNotif, ...prev];
+            localStorage.setItem('pixel_notifications', JSON.stringify(updated));
+            return updated;
+        });
 
-        // 💡 إضافة: لو الطالب مفعل الإشعارات، نبعتله إشعار حقيقي على جهازه!
         if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-            new Notification(notif.title, {
-                body: notif.body,
-                icon: '/logo.png' // مسار اللوجو بتاعك
-            });
+            new Notification(notif.title, { body: notif.body, icon: '/logo.png' });
         }
     }, []);
 
