@@ -1,10 +1,9 @@
-// FILE: components/dashboard/Sidebar.tsx
 "use client";
 import React from 'react';
 import { 
     FaHome, FaPlayCircle, FaFileAlt, FaMoneyCheckAlt, 
-    FaBoxOpen, FaChartPie, FaHistory, FaCog, 
-    FaTimes, FaTrophy, FaLock, FaPencilAlt 
+    FaBoxOpen, FaChartPie, FaCog, 
+    FaTimes, FaTrophy, FaLock, FaPencilAlt, FaClipboardList
 } from 'react-icons/fa';
 
 interface SidebarProps {
@@ -14,20 +13,21 @@ interface SidebarProps {
     closeMobileSidebar: () => void;
     currentAvatar: string;
     openAvatarModal: () => void;
-    lang: string; // 💡 تم إضافة اللغة هنا لحل خطأ الـ TypeScript
+    lang: string; 
 }
 
 export default function Sidebar({ activeTab, setActiveTab, isMobileOpen, closeMobileSidebar, currentAvatar, openAvatarModal, lang }: SidebarProps) {
     const isAr = lang === 'ar';
 
+    // 💡 تم إضافة "مهامي الدراسية" (Tasks) كصفحة كاملة في القائمة
     const navItems = [
         { id: 'overview', icon: <FaHome />, label: isAr ? 'نظرة عامة' : 'Overview' },
         { id: 'courses', icon: <FaPlayCircle />, label: isAr ? 'مسيرتي التعليمية' : 'My Courses' },
+        { id: 'tasks', icon: <FaClipboardList />, label: isAr ? 'مهامي الدراسية' : 'My Tasks' }, // 👈 التاب الجديد
         { id: 'exams', icon: <FaFileAlt />, label: isAr ? 'الامتحانات والواجبات' : 'Exams & Homework' },
         { id: 'financials', icon: <FaMoneyCheckAlt />, label: isAr ? 'المحفظة والأكواد' : 'Wallet & Codes' },
         { id: 'orders', icon: <FaBoxOpen />, label: isAr ? 'طلبات المتجر' : 'Store Orders' },
         { id: 'analytics', icon: <FaChartPie />, label: isAr ? 'تحليل الأداء' : 'Analytics' },
-        { id: 'activity', icon: <FaHistory />, label: isAr ? 'سجل العمليات الكامل' : 'Activity History' },
         { id: 'settings', icon: <FaCog />, label: isAr ? 'إعدادات الحساب والأمان' : 'Account Settings' }
     ];
 

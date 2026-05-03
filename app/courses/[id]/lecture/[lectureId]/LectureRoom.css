@@ -74,9 +74,56 @@
 .menu-popup button { background: transparent; color: white; border: none; padding: 8px 20px; cursor: pointer; border-radius: 5px; font-weight: bold; }
 .menu-popup button:hover { background: var(--p-purple); }
 
-/* الموبايل والتابلت */
+/* =========================================
+   4. التحسينات الجديدة (Clean Architecture)
+   ========================================= */
+.lecture-wrapper { padding-top: 120px; padding-bottom: 80px; }
+.lecture-main-col { display: flex; flex-direction: column; gap: 20px; }
+
+/* 💡 حالات التحميل (Skeleton) */
+.lec-skeleton-wrapper { display: flex; gap: 30px; width: 100%; align-items: flex-start; }
+.lec-skeleton-sidebar { flex: 0 0 320px; }
+.lec-skeleton-main { flex: 1 1 0; display: flex; flex-direction: column; gap: 20px; }
+
+/* 💡 حالة الخطأ (Error State) */
+.lec-error-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; gap: 20px; padding-top: 120px; }
+.lec-error-icon { font-size: 5rem; color: var(--danger); opacity: 0.5; animation: pulse 2s infinite; }
+.lec-error-title { color: var(--txt); font-size: 1.8rem; font-weight: 900; }
+.lec-error-desc { color: var(--txt-mut); max-width: 500px; line-height: 1.6; }
+
+/* 💡 تفاصيل المحاضرة */
+.lec-details-card { margin-top: 25px; background: var(--card); padding: 30px; border-radius: 15px; border: 1px solid rgba(108,92,231,0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+.lec-details-title { margin-bottom: 15px; color: var(--p-purple); font-size: 1.6rem; font-weight: 900; display: flex; align-items: center; gap: 10px; }
+.lec-details-desc { opacity: 0.9; line-height: 1.8; font-weight: bold; color: var(--txt); font-size: 1.05rem; }
+
+/* 💡 تراكينج بار في الفيديو (Resume Toast) */
+.resume-toast { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); border: 1px solid var(--p-purple); padding: 15px 25px; border-radius: 12px; display: flex; align-items: center; gap: 15px; z-index: 100; animation: fadeInDown 0.4s ease; color: white; }
+.resume-toast button { padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
+.resume-btn-yes { background: var(--p-purple); color: white; }
+.resume-btn-yes:hover { background: #5a4bcf; }
+.resume-btn-no { background: rgba(255,255,255,0.1); color: white; }
+.resume-btn-no:hover { background: rgba(255,255,255,0.2); }
+
+/* Keyframes للصناديق الجديدة */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+@keyframes fadeInDown {
+    0% { opacity: 0; transform: translate(-50%, -20px); }
+    100% { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* =========================================
+   5. الموبايل والتابلت
+   ========================================= */
 @media (max-width: 1024px) {
-    .lecture-page-container { flex-direction: column-reverse; }
-    .lecture-sidebar-area { width: 100%; flex: auto; position: static; }
-    .lecture-main-area { width: 100%; flex: auto; }
+    .lecture-page-container, .lec-skeleton-wrapper { flex-direction: column-reverse; }
+    .lecture-sidebar-area, .lec-skeleton-sidebar { width: 100%; flex: auto; position: static; }
+    .lecture-main-area, .lec-skeleton-main { width: 100%; flex: auto; }
+    
+    /* تظبيط شريط الـ Resume على الموبايل */
+    .resume-toast { width: 90%; flex-direction: column; text-align: center; }
+    .resume-toast button { width: 100%; }
 }

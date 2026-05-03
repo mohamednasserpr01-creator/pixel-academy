@@ -1,7 +1,7 @@
 // FILE: components/dashboard/tabs/SettingsTab.tsx
 "use client";
 import React, { useState } from 'react';
-import { FaCog, FaSave, FaShieldAlt, FaMobileAlt, FaDesktop, FaUser, FaPhoneAlt, FaEnvelope, FaSignOutAlt } from 'react-icons/fa';
+import { FaCog, FaSave, FaShieldAlt, FaMobileAlt, FaDesktop, FaUser, FaPhoneAlt, FaEnvelope, FaSignOutAlt, FaLock, FaBell } from 'react-icons/fa';
 
 import { useAuth } from '../../../context/AuthContext';
 import { dashboardData } from '../../../data/mock/dashboardData';
@@ -15,17 +15,16 @@ import { useToast } from '../../../context/ToastContext';
 export default function SettingsTab() {
     const { user } = useAuth(); 
     const { lang } = useSettings(); 
-    const { showToast } = useToast(); // 💡 تفعيل الإشعارات
+    const { showToast } = useToast(); 
     
     const isAr = lang === 'ar';
 
-    // 💡 حالة التحميل للزرار عشان الـ UX
     const [isSaving, setIsSaving] = useState(false);
 
-    const handleSave = async () => {
+    const handleSave = async (e?: React.FormEvent) => {
+        if(e) e.preventDefault();
         setIsSaving(true);
         try {
-            // محاكاة تأخير الـ API
             await new Promise(resolve => setTimeout(resolve, 800));
             showToast(isAr ? 'تم حفظ بياناتك بنجاح! ✅' : 'Your data has been saved successfully! ✅', 'success');
         } catch (error) {
@@ -35,12 +34,8 @@ export default function SettingsTab() {
         }
     };
 
-    const handleLogoutDevice = (deviceId: number) => {
-        showToast(isAr ? 'تم تسجيل الخروج من الجهاز بنجاح' : 'Logged out from device successfully', 'info');
-    };
-
     return (
-        <div className="tab-pane active">
+        <div className="tab-pane active fade-in">
             <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <FaCog /> {isAr ? 'إعدادات الحساب والأمان' : 'Account & Security Settings'}
             </h2>
@@ -50,7 +45,6 @@ export default function SettingsTab() {
                     {isAr ? 'البيانات الشخصية' : 'Personal Information'}
                 </h3>
                 
-                {/* 💡 وداعاً للـ HTML Inputs، أهلاً بالـ Enterprise Inputs */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                     <Input 
                         label={isAr ? 'الاسم الرباعي' : 'Full Name'}
@@ -63,7 +57,7 @@ export default function SettingsTab() {
                         label={isAr ? 'رقم الهاتف' : 'Phone Number'}
                         defaultValue={user?.phone || ""}
                         readOnly
-                        disabled // 💡 رقم التليفون مبيتغيرش
+                        disabled 
                         icon={<FaPhoneAlt />}
                         inputSize="md"
                         message={isAr ? 'لا يمكن تعديل رقم الهاتف المرتبط بالحساب' : 'Phone number linked to account cannot be changed'}
@@ -91,57 +85,38 @@ export default function SettingsTab() {
                 </div>
             </div>
 
-            <div className="settings-card" style={{ borderColor: 'var(--danger)', marginTop: '30px' }}>
-                <h3 style={{ marginBottom: '20px', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <FaShieldAlt /> {isAr ? 'الأجهزة المتصلة بحسابك' : 'Devices Connected to Your Account'}
+            <div className="settings-card">
+                <h3 style={{ marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>
+                    <FaLock style={{ color: 'var(--p-purple)' }} /> {isAr ? 'تغيير كلمة المرور' : 'Change Password'}
                 </h3>
-                
-                <div className="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>{isAr ? 'الجهاز' : 'Device'}</th>
-                                <th>{isAr ? 'الموقع / IP' : 'Location / IP'}</th>
-                                <th>{isAr ? 'آخر نشاط' : 'Last Activity'}</th>
-                                <th>{isAr ? 'إجراء' : 'Action'}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {dashboardData.devices.map(dev => (
-                                <tr key={dev.id}>
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            {dev.icon === 'mobile' ? <FaMobileAlt size={18} /> : <FaDesktop size={18} />} 
-                                            <span style={{ fontWeight: 'bold' }}>{dev.name}</span>
-                                        </div>
-                                    </td>
-                                    <td style={{ direction: 'ltr', textAlign: isAr ? 'right' : 'left', fontFamily: 'monospace', fontSize: '0.9rem' }}>
-                                        {dev.location}
-                                    </td>
-                                    <td style={{ color: dev.isCurrent ? 'var(--success)' : 'var(--txt-mut)', fontWeight: dev.isCurrent ? 'bold' : 'normal' }}>
-                                        {dev.isCurrent && !isAr ? 'Online Now' : dev.activity}
-                                    </td>
-                                    <td>
-                                        {dev.isCurrent ? (
-                                            <span className="badge success" style={{ display: 'inline-block', textAlign: 'center' }}>
-                                                {isAr ? 'مسموح (حالي)' : 'Active Now'}
-                                            </span>
-                                        ) : (
-                                            // 💡 استخدام الـ Button بتاعنا بنوع danger
-                                            <Button 
-                                                variant="danger" 
-                                                size="sm" 
-                                                icon={<FaSignOutAlt />}
-                                                onClick={() => handleLogoutDevice(dev.id)}
-                                            >
-                                                {isAr ? 'تسجيل خروج' : 'Logout'}
-                                            </Button>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <form onSubmit={handleSave}>
+                    <div className="form-grid">
+                        <div className="input-group">
+                            <label>{isAr ? 'كلمة المرور الحالية' : 'Current Password'}</label>
+                            <input type="password" placeholder="••••••••" required />
+                        </div>
+                        <div className="input-group">
+                            <label>{isAr ? 'كلمة المرور الجديدة' : 'New Password'}</label>
+                            <input type="password" placeholder="••••••••" required />
+                        </div>
+                    </div>
+                    <button type="submit" className="btn-save">{isAr ? 'حفظ التعديلات' : 'Save Changes'}</button>
+                </form>
+            </div>
+
+            <div className="settings-card">
+                <h3 style={{ marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>
+                    <FaBell style={{ color: 'var(--warning)' }} /> {isAr ? 'تفضيلات الإشعارات' : 'Notification Preferences'}
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                        <input type="checkbox" defaultChecked style={{ width: '18px', height: '18px' }} />
+                        <span>{isAr ? 'إشعارات نزول حصص جديدة' : 'New Lectures Notifications'}</span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                        <input type="checkbox" defaultChecked style={{ width: '18px', height: '18px' }} />
+                        <span>{isAr ? 'تذكير بمواعيد الواجبات والامتحانات' : 'Homework & Exams Reminders'}</span>
+                    </label>
                 </div>
             </div>
         </div>

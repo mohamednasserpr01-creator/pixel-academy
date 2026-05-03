@@ -1,6 +1,5 @@
-// FILE: app/dashboard/page.tsx
 "use client";
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Component, ErrorInfo, ReactNode } from 'react';
 import dynamic from 'next/dynamic'; 
 
 import Sidebar from '../../components/dashboard/Sidebar';
@@ -9,27 +8,30 @@ import Header from '../../components/dashboard/Header';
 import { useSettings } from '../../context/SettingsContext'; 
 import { useToast } from '../../context/ToastContext'; 
 
-// 💡 استدعاء الـ UI System الخارق بتاعنا
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
 
+// 💡 استيراد ملف التنسيق الأصلي فقط!
 import './dashboard.css'; 
 
+// 💡 إضافة التابات الجديدة (المهام، الرسائل، الإشعارات)
 export const TABS = {
     OVERVIEW: 'overview',
     COURSES: 'courses',
+    TASKS: 'tasks',
     EXAMS: 'exams',
     FINANCIALS: 'financials',
     ORDERS: 'orders',
     ANALYTICS: 'analytics',
-    ACTIVITY: 'activity',
-    SETTINGS: 'settings'
+    SETTINGS: 'settings',
+    MESSAGES: 'messages',       // 👈 تاب الرسائل
+    NOTIFICATIONS: 'notifications' // 👈 تاب الإشعارات
 } as const;
 
-type TabValue = string; 
+// 💡 حل مشكلة التايب الضعيف
+export type TabValue = typeof TABS[keyof typeof TABS];
 
-// 💡 وداعاً لكلمة "جاري التحميل"، أهلاً بالـ Skeleton الاحترافي!
 const Loader = () => (
     <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
         <Skeleton variant="text" width="30%" height="30px" />
@@ -40,25 +42,55 @@ const Loader = () => (
 
 const OverviewTab = dynamic(() => import('../../components/dashboard/tabs/OverviewTab'), { loading: Loader });
 const CoursesTab = dynamic(() => import('../../components/dashboard/tabs/CoursesTab'), { loading: Loader });
+const TasksTab = dynamic(() => import('../../components/dashboard/tabs/TasksTab'), { loading: Loader });
 const ExamsTab = dynamic(() => import('../../components/dashboard/tabs/ExamsTab'), { loading: Loader });
 const FinancialsTab = dynamic(() => import('../../components/dashboard/tabs/FinancialsTab'), { loading: Loader });
 const OrdersTab = dynamic(() => import('../../components/dashboard/tabs/OrdersTab'), { loading: Loader });
 const AnalyticsTab = dynamic(() => import('../../components/dashboard/tabs/AnalyticsTab'), { loading: Loader });
-const ActivityTab = dynamic(() => import('../../components/dashboard/tabs/ActivityTab'), { loading: Loader });
 const SettingsTab = dynamic(() => import('../../components/dashboard/tabs/SettingsTab'), { loading: Loader });
+
+// 💡 استدعاء الصفحات الجديدة اللي عملناها
+const MessagesTab = dynamic(() => import('../../components/dashboard/tabs/MessagesTab'), { loading: Loader });
+const NotificationsTab = dynamic(() => import('../../components/dashboard/tabs/NotificationsTab'), { loading: Loader });
 
 const ChatBox = dynamic(() => import('../../components/chat/ChatBox'), { ssr: false });
 
-const TAB_COMPONENTS: Record<string, React.ComponentType<any>> = {
+const TAB_COMPONENTS: Record<TabValue, React.ComponentType<any>> = {
     [TABS.OVERVIEW]: OverviewTab,
     [TABS.COURSES]: CoursesTab,
+    [TABS.TASKS]: TasksTab,
     [TABS.EXAMS]: ExamsTab,
     [TABS.FINANCIALS]: FinancialsTab,
     [TABS.ORDERS]: OrdersTab,
     [TABS.ANALYTICS]: AnalyticsTab,
-    [TABS.ACTIVITY]: ActivityTab,
-    [TABS.SETTINGS]: SettingsTab
+    [TABS.SETTINGS]: SettingsTab,
+    [TABS.MESSAGES]: MessagesTab,       // 👈 ربط الرسائل
+    [TABS.NOTIFICATIONS]: NotificationsTab // 👈 ربط الإشعارات
 };
+
+// 💡 إضافة Error Boundary لحماية الداشبورد
+class TabErrorBoundary extends Component<{ children: ReactNode, lang: string }, { hasError: boolean }> {
+    constructor(props: { children: ReactNode, lang: string }) {
+        super(props);
+        this.state = { hasError: false };
+    }
+    static getDerivedStateFromError(_: Error) { return { hasError: true }; }
+    componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error("Tab Error:", error, errorInfo); }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{ background: 'rgba(231, 76, 60, 0.1)', border: '1px dashed var(--danger)', padding: '40px', borderRadius: '15px', textAlign: 'center', marginTop: '20px' }}>
+                    <h3 style={{ color: 'var(--danger)', marginBottom: '10px' }}>{this.props.lang === 'ar' ? 'عذراً، حدث خطأ في هذه الصفحة ⚠️' : 'Oops, something went wrong in this tab ⚠️'}</h3>
+                    <p style={{ color: 'var(--txt)' }}>{this.props.lang === 'ar' ? 'نعمل على حل المشكلة، يرجى الانتقال لقسم آخر.' : 'We are fixing this issue. Please switch to another tab.'}</p>
+                    <Button variant="outline" onClick={() => this.setState({ hasError: false })} style={{ marginTop: '15px' }}>
+                        {this.props.lang === 'ar' ? 'إعادة المحاولة' : 'Try Again'}
+                    </Button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
 
 export default function DashboardPage() {
     const { theme, toggleMode, lang } = useSettings(); 
@@ -76,8 +108,10 @@ export default function DashboardPage() {
     const girlsAvatars = useMemo(() => Array.from({ length: 10 }, (_, i) => `https://api.dicebear.com/7.x/avataaars/svg?seed=Girl${i + 1}&style=circle`), []);
 
     useEffect(() => {
-        const savedAvatar = localStorage.getItem('pixel_saved_avatar');
-        if (savedAvatar) setCurrentAvatar(savedAvatar);
+        if (typeof window !== 'undefined') {
+            const savedAvatar = localStorage.getItem('pixel_saved_avatar');
+            if (savedAvatar) setCurrentAvatar(savedAvatar);
+        }
     }, []);
 
     const saveNewAvatar = () => {
@@ -87,29 +121,27 @@ export default function DashboardPage() {
             setIsAvatarModalOpen(false);
             showToast(lang === 'ar' ? 'تم تحديث صورتك الشخصية بنجاح! 🎭' : 'Avatar updated successfully! 🎭', 'success');
         } else {
-            // 💡 تم حل المشكلة وضبط التنسيق هنا
             showToast(lang === 'ar' ? 'يرجى اختيار صورة أولاً' : 'Please select an avatar first', 'error');
         }
     };
 
     const ActiveComponent = TAB_COMPONENTS[activeTab] || OverviewTab; 
 
-    const HeaderComponent: any = Header;
-
     return (
         <div className="dashboard-root">
-            <HeaderComponent 
+            <Header 
                 toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
                 theme={theme} 
                 toggleTheme={toggleMode} 
                 walletBalance={walletBalance} 
                 lang={lang} 
+                setActiveTab={(tab) => setActiveTab(tab as TabValue)} // 👈 الدالة اتضافت هنا، الإيرور اختفى!
             />
 
             <div className="dash-container">
                 <Sidebar 
                     activeTab={activeTab} 
-                    setActiveTab={setActiveTab} 
+                    setActiveTab={(tab) => setActiveTab(tab as TabValue)} 
                     isMobileOpen={isSidebarOpen} 
                     closeMobileSidebar={() => setIsSidebarOpen(false)}
                     currentAvatar={currentAvatar} 
@@ -118,7 +150,9 @@ export default function DashboardPage() {
                 />
 
                 <main className="dash-content">
-                    <ActiveComponent lang={lang} />
+                    <TabErrorBoundary key={activeTab} lang={lang}>
+                        <ActiveComponent lang={lang} />
+                    </TabErrorBoundary>
                 </main>
             </div>
 

@@ -1,6 +1,15 @@
 // FILE: services/trackingService.ts
 
-export type EventType = 'video_play' | 'video_pause' | 'video_seek' | 'video_complete' | 'exam_start' | 'exam_submit' | 'page_view';
+// 💡 ضفنا 'video_progress_sync' هنا عشان التايب سكريبت يقبله
+export type EventType = 
+    | 'video_play' 
+    | 'video_pause' 
+    | 'video_seek' 
+    | 'video_complete' 
+    | 'video_progress_sync' // 👈 الإضافة الجديدة
+    | 'exam_start' 
+    | 'exam_submit' 
+    | 'page_view';
 
 export interface TrackingEvent {
     userId: string;

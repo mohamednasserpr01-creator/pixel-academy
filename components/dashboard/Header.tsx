@@ -12,9 +12,12 @@ interface HeaderProps {
     theme: string;
     toggleTheme: () => void;
     walletBalance: number;
+    lang: string;
+    setActiveTab: (tab: string) => void; // 💡 استلام الدالة لتغيير التابات
 }
 
-export default function Header({ toggleSidebar, theme, toggleTheme, walletBalance }: HeaderProps) {
+export default function Header({ toggleSidebar, theme, toggleTheme, walletBalance, lang, setActiveTab }: HeaderProps) {
+    const isAr = lang === 'ar';
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -33,6 +36,12 @@ export default function Header({ toggleSidebar, theme, toggleTheme, walletBalanc
         setActiveDropdown(activeDropdown === dropName ? null : dropName);
     };
 
+    // 💡 دالة لفتح الصفحة الكاملة وإغلاق القائمة المنسدلة
+    const handleViewAll = (tabName: string) => {
+        setActiveTab(tabName);
+        setActiveDropdown(null);
+    };
+
     return (
         <header className="dash-header">
             <div className="logo">
@@ -43,9 +52,9 @@ export default function Header({ toggleSidebar, theme, toggleTheme, walletBalanc
             </div>
 
             <div className="toolbar" ref={dropdownRef}>
-                <Link href="/" className="icon-btn" title="الرئيسية"><FaHome /></Link>
+                <Link href="/" className="icon-btn" title={isAr ? "الرئيسية" : "Home"}><FaHome /></Link>
                 
-                {/* --- قائمة الرسائل --- */}
+                {/* --- قائمة الرسائل (Dropdown) --- */}
                 <div className="icon-wrapper">
                     <button className="icon-btn" onClick={() => toggleDrop('msgs')}>
                         <FaEnvelope />
@@ -53,32 +62,37 @@ export default function Header({ toggleSidebar, theme, toggleTheme, walletBalanc
                     </button>
                     <div className={`dropdown-menu ${activeDropdown === 'msgs' ? 'active' : ''}`}>
                         <div className="drop-header">
-                            <span>الرسائل (2)</span>
-                            <span style={{ color: 'var(--p-purple)', fontSize: '0.8rem', cursor: 'pointer' }}>فتح المنتدى</span>
+                            <span>{isAr ? 'الرسائل (2)' : 'Messages (2)'}</span>
+                            <span style={{ color: 'var(--p-purple)', fontSize: '0.8rem', cursor: 'pointer' }}>{isAr ? 'فتح المنتدى' : 'Open Forum'}</span>
                         </div>
                         <div className="drop-body">
-                            <div className="drop-item unread">
+                            {/* رسالة 1 */}
+                            <div className="drop-item unread" onClick={() => handleViewAll('messages')}>
                                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Jack" className="drop-avatar" alt="User" />
                                 <div className="drop-content">
                                     <h4>Physics_Lover</h4>
-                                    <p>يا صاحبي حليت مسألة كيرشوف الصعبة ولا لسه؟</p>
-                                    <span className="drop-time">منذ 10 دقائق</span>
+                                    <p>{isAr ? 'يا صاحبي حليت مسألة كيرشوف الصعبة ولا لسه؟' : 'Did you solve the Kirchhoff problem?'}</p>
+                                    <span className="drop-time">{isAr ? 'منذ 10 دقائق' : '10 mins ago'}</span>
                                 </div>
                             </div>
-                            <div className="drop-item">
+                            {/* رسالة 2 */}
+                            <div className="drop-item" onClick={() => handleViewAll('messages')}>
                                 <div className="drop-icon"><FaRobot /></div>
                                 <div className="drop-content">
                                     <h4>Pixel Bot</h4>
-                                    <p>مرحباً بك في مجتمع بيكسل!</p>
-                                    <span className="drop-time">منذ يومين</span>
+                                    <p>{isAr ? 'مرحباً بك في مجتمع بيكسل!' : 'Welcome to Pixel community!'}</p>
+                                    <span className="drop-time">{isAr ? 'منذ يومين' : '2 days ago'}</span>
                                 </div>
                             </div>
                         </div>
-                        <div className="drop-footer">عرض كل الرسائل</div>
+                        {/* 💡 ربط الزر بالصفحة الكاملة للرسائل */}
+                        <div className="drop-footer" onClick={() => handleViewAll('messages')}>
+                            {isAr ? 'عرض كل الرسائل' : 'View all messages'}
+                        </div>
                     </div>
                 </div>
 
-                {/* --- قائمة الإشعارات --- */}
+                {/* --- قائمة الإشعارات (Dropdown) --- */}
                 <div className="icon-wrapper">
                     <button className="icon-btn" onClick={() => toggleDrop('notif')}>
                         <FaBell />
@@ -86,28 +100,33 @@ export default function Header({ toggleSidebar, theme, toggleTheme, walletBalanc
                     </button>
                     <div className={`dropdown-menu ${activeDropdown === 'notif' ? 'active' : ''}`}>
                         <div className="drop-header">
-                            <span>الإشعارات (3)</span>
+                            <span>{isAr ? 'الإشعارات (3)' : 'Notifications (3)'}</span>
                             <FaCheckDouble />
                         </div>
                         <div className="drop-body">
-                            <div className="drop-item unread">
+                            {/* إشعار 1 */}
+                            <div className="drop-item unread" onClick={() => handleViewAll('notifications')}>
                                 <div className="drop-icon" style={{ color: 'var(--success)', background: 'rgba(46,204,113,0.1)' }}><FaCheckCircle /></div>
                                 <div className="drop-content">
-                                    <h4>تم تصحيح الواجب</h4>
-                                    <p>حصلت على 9/10 في واجب الكيمياء الأخير.</p>
-                                    <span className="drop-time">الآن</span>
+                                    <h4>{isAr ? 'تم تصحيح الواجب' : 'Homework Graded'}</h4>
+                                    <p>{isAr ? 'حصلت على 9/10 في واجب الكيمياء الأخير.' : 'You got 9/10 in the last chemistry HW.'}</p>
+                                    <span className="drop-time">{isAr ? 'الآن' : 'Just now'}</span>
                                 </div>
                             </div>
-                            <div className="drop-item unread">
+                            {/* إشعار 2 */}
+                            <div className="drop-item unread" onClick={() => handleViewAll('notifications')}>
                                 <div className="drop-icon" style={{ color: 'var(--warning)', background: 'rgba(241,196,15,0.1)' }}><FaBoxOpen /></div>
                                 <div className="drop-content">
-                                    <h4>تحديث حالة طلبك</h4>
-                                    <p>طلبك من المتجر الآن "جاري التوصيل".</p>
-                                    <span className="drop-time">منذ ساعتين</span>
+                                    <h4>{isAr ? 'تحديث حالة طلبك' : 'Order Status Updated'}</h4>
+                                    <p>{isAr ? 'طلبك من المتجر الآن "جاري التوصيل".' : 'Your store order is now "Out for delivery".'}</p>
+                                    <span className="drop-time">{isAr ? 'منذ ساعتين' : '2 hours ago'}</span>
                                 </div>
                             </div>
                         </div>
-                        <div className="drop-footer">عرض كل الإشعارات</div>
+                        {/* 💡 ربط الزر بالصفحة الكاملة للإشعارات */}
+                        <div className="drop-footer" onClick={() => handleViewAll('notifications')}>
+                            {isAr ? 'عرض كل الإشعارات' : 'View all notifications'}
+                        </div>
                     </div>
                 </div>
                 
@@ -119,7 +138,7 @@ export default function Header({ toggleSidebar, theme, toggleTheme, walletBalanc
                     {theme === 'dark' ? <FaSun /> : <FaMoon />}
                 </button>
 
-                <button className="btn-logout" title="تسجيل خروج"><FaSignOutAlt /></button>
+                <button className="btn-logout" title={isAr ? "تسجيل خروج" : "Logout"}><FaSignOutAlt /></button>
             </div>
         </header>
     );

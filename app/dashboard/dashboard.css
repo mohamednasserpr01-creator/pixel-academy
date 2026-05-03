@@ -44,17 +44,17 @@ html.light-mode {
 .drop-icon { width: 40px; height: 40px; border-radius: 50%; background: rgba(108,92,231,0.1); color: var(--p-purple); display: flex; justify-content: center; align-items: center; font-size: 1.2rem; flex-shrink: 0; }
 .drop-footer { padding: 10px; text-align: center; font-size: 0.85rem; font-weight: bold; color: var(--p-purple); cursor: pointer; background: var(--bg); border-top: 1px solid rgba(255,255,255,0.05); }
 
-/* حاوية الصفحة (الحل الجذري لمنع الانفجار: min-width: 0) */
+/* حاوية الصفحة */
 .dash-container { display: flex; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; padding: 30px 20px; gap: 30px; min-width: 0; overflow-x: hidden; }
 
-/* 💡 التعديل هنا: نزلنا الـ z-index لـ 90 عشان ميركبش فوق الناف بار */
+/* السايد بار */
 .dash-sidebar { width: 280px; background: var(--card); border: 1px solid rgba(108,92,231,0.2); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 20px; height: fit-content; position: sticky; top: 100px; z-index: 90; transition: 0.3s ease; }
-
 .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 4000; }
 .sidebar-overlay.active { display: block; }
 .mobile-close-sidebar { display: none; position: absolute; top: 15px; left: 15px; background: rgba(255,255,255,0.1); border: none; color: white; width: 35px; height: 35px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; z-index: 10; }
 .mobile-toggle { display: none; background: transparent; border: none; color: var(--p-purple); font-size: 1.8rem; cursor: pointer; }
 
+/* كود ولي الأمر والمركز */
 .student-id-card { text-align: center; padding-bottom: 20px; border-bottom: 1px dashed rgba(255,255,255,0.1); position: relative; }
 .avatar-container { position: relative; display: inline-block; margin-bottom: 15px; }
 .avatar-container img { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--p-purple); object-fit: cover; }
@@ -74,7 +74,7 @@ html.light-mode {
 .dash-nav button.active, .dash-nav button:hover { background: var(--p-purple); color: white; }
 
 /* =========================================
-   3. محتوى التابات والجداول (علاج خروج الجداول)
+   3. محتوى التابات والجداول 
 ========================================= */
 .dash-content { flex: 1; width: 100%; max-width: 100%; min-width: 0; overflow-x: hidden; }
 .tab-pane { display: none; width: 100%; max-width: 100%; } 
@@ -97,7 +97,7 @@ html.light-mode {
 .progress-fill { height: 100%; background: linear-gradient(90deg, var(--p-purple), #ff007f); }
 .progress-text { font-size: 0.8rem; font-weight: bold; color: var(--txt-mut); display: flex; justify-content: space-between; }
 
-/* الجداول (السر هنا: display: block; overflow-x: auto;) */
+/* الجداول */
 .table-responsive { width: 100%; max-width: 100%; overflow-x: auto; display: block; background: var(--card); border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: collapse; min-width: 600px; text-align: right; }
 th, td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
@@ -129,56 +129,35 @@ th { background: rgba(108,92,231,0.1); color: var(--p-purple); font-weight: 900;
 .fab-btn { width: 60px; height: 60px; border-radius: 50%; border: none; color: white; font-size: 1.8rem; display: flex; justify-content: center; align-items: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); cursor: pointer; }
 .fab-wa { background: #25D366; } .fab-ai { background: linear-gradient(45deg, var(--p-purple), #ff007f); }
 
-/* نافذة الشات الأساسية (الكمبيوتر) */
 .ai-chat-window { position: fixed; bottom: 100px; left: 30px; width: 350px; height: 450px; background: var(--h-bg); border: 2px solid var(--p-purple); border-radius: 20px; display: none; flex-direction: column; z-index: 10000; transition: all 0.3s ease; }
 .ai-chat-window.active { display: flex; }
 .ai-chat-header { background: var(--p-purple); color: white; padding: 15px; font-weight: 900; display: flex; justify-content: space-between; border-top-left-radius: 18px; border-top-right-radius: 18px; }
-
-/* جسم الشات والرسائل */
 .ai-chat-body { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
 .ai-msg { margin-bottom: 12px; padding: 10px 15px; border-radius: 12px; max-width: 85%; font-size: 0.9rem; line-height: 1.5; word-wrap: break-word; font-weight: bold; }
 .ai-msg.bot { background: rgba(108,92,231,0.2); align-self: flex-start; color: var(--txt); border-bottom-right-radius: 2px; }
 .ai-msg.user { background: var(--p-purple); color: white; align-self: flex-end; border-bottom-left-radius: 2px; }
-
-/* حركة الكتابة (Typing Indicator) */
 .typing { display: flex; gap: 4px; align-items: center; padding: 5px 0; }
 .typing span { width: 6px; height: 6px; background: var(--p-purple); border-radius: 50%; animation: typing 1s infinite alternate; }
 .typing span:nth-child(2) { animation-delay: 0.2s; }
 .typing span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes typing { 0% { opacity: 0.2; transform: translateY(0); } 100% { opacity: 1; transform: translateY(-4px); } }
-
-/* حقل الإدخال */
 .ai-chat-input { display: flex; padding: 10px; border-top: 1px solid rgba(255,255,255,0.05); }
 .ai-chat-input input { flex: 1; background: var(--bg); border: 1px solid var(--p-purple); padding: 10px; border-radius: 10px; color: var(--txt); outline: none; }
 
-/* مودال الأفاتار */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: none; justify-content: center; align-items: center; }
 .modal-overlay.active { display: flex; }
 .modal-box { background: var(--h-bg); border: 2px solid var(--p-purple); border-radius: 20px; width: 100%; max-width: 600px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
 .close-modal-btn { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.5); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }
-.avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 15px; margin-top: 20px; }
-.avatar-option { width: 100%; border-radius: 50%; border: 3px solid transparent; cursor: pointer; }
-.avatar-option.selected { border-color: var(--success); }
 
 /* =========================================
-   5. الموبايل والـ Fullscreen للـ Chat
+   5. الموبايل
 ========================================= */
 @media (max-width: 992px) {
     .mobile-toggle { display: block; }
     .mobile-close-sidebar { display: flex; justify-content: center; align-items: center; }
-    
     .dash-container { flex-direction: column; padding: 15px; width: 100%; max-width: 100%; margin: 0; overflow-x: hidden; }
-    
-    .dash-sidebar { 
-        position: fixed; top: 0; right: -320px; 
-        width: 280px; height: 100vh; z-index: 5000; 
-        border-radius: 0; border: none; padding-top: 60px; 
-        background: var(--bg);
-        overflow-y: auto !important; 
-        padding-bottom: 120px !important; 
-    }
+    .dash-sidebar { position: fixed; top: 0; right: -320px; width: 280px; height: 100vh; z-index: 5000; border-radius: 0; border: none; padding-top: 60px; background: var(--bg); overflow-y: auto !important; padding-bottom: 120px !important; }
     .dash-sidebar.active { right: 0; }
-    
     .stats-grid, .form-grid, .analytics-grid { grid-template-columns: 1fr; width: 100%; }
     .course-card { flex-direction: column; align-items: flex-start; }
     .progress-container { max-width: 100%; width: 100%; }
@@ -186,24 +165,11 @@ th { background: rgba(108,92,231,0.1); color: var(--p-purple); font-weight: 900;
     .recharge-box { flex-direction: column; width: 100%; }
     .recharge-box input, .btn-recharge { width: 100%; max-width: 100%; }
     .settings-card { padding: 15px; width: 100%; } 
-    
     .toolbar .wallet-badge { display: none; }
     .dropdown-menu { width: 280px; left: -80px; }
     .fab-container { bottom: 15px; left: 15px; }
-
-    /* 💡 الشات Fullscreen في الموبايل */
-    .ai-chat-window.active {
-        left: 0;
-        bottom: 0;
-        width: 100vw;
-        height: 100vh;
-        max-width: 100vw;
-        border-radius: 0;
-    }
-    .ai-chat-header {
-        border-radius: 0;
-    }
-    .ai-chat-input {
-        padding-bottom: 25px; /* راحة للإصبع فوق كيبورد الموبايل */
-    }
+    .ai-chat-window.active { left: 0; bottom: 0; width: 100vw; height: 100vh; max-width: 100vw; border-radius: 0; }
+    .ai-chat-header { border-radius: 0; }
+    .ai-chat-input { padding-bottom: 25px; }
 }
+@keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }

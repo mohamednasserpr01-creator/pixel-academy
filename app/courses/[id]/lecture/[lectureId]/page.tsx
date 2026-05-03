@@ -1,73 +1,87 @@
-// FILE: app/courses/[id]/lecture/[lectureId]/page.tsx
 "use client";
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
+import { useParams } from 'next/navigation'; // 💡 1. الاستخدام الصحيح للبارامترز
+import { FaExclamationTriangle, FaSyncAlt } from 'react-icons/fa';
 
-// 💡 تم تعديل كل المسارات هنا لـ 5 مستويات للخلف فقط لتطابق الشجرة الجديدة
 import { useSettings } from '../../../../../context/SettingsContext';
 import { lectureService } from '../../../../../services/lectureService';
 import { PlaylistItem } from '../../../../../types'; 
 
 import LectureSidebar from '../../../../../components/lecture/LectureSidebar/LectureSidebar';
 import { Skeleton } from '../../../../../components/ui/Skeleton';
+import { Button } from '../../../../../components/ui/Button'; // 💡 استدعاء الأزرار للـ Error State
 import './LectureRoom.css';
 
+// 💡 تحميل المكونات الثقيلة بـ Lazy Load
 const VideoPlayer = dynamic(
     () => import('../../../../../components/lecture/VideoPlayer/VideoPlayer'), 
-    { 
-        ssr: false, 
-        loading: () => <Skeleton variant="rectangular" height="400px" /> 
-    }
+    { ssr: false, loading: () => <Skeleton variant="rectangular" height="400px" /> }
 );
 
 const LectureChat = dynamic(
     () => import('../../../../../components/lecture/LectureChat/LectureChat'), 
-    { 
-        ssr: false, 
-        loading: () => <Skeleton variant="rectangular" height="350px" /> 
-    }
+    { ssr: false, loading: () => <Skeleton variant="rectangular" height="350px" /> }
 );
 
 const LectureContent = dynamic(
     () => import('../../../../../components/lecture/LectureContent/LectureContent'), 
-    { 
-        ssr: false, 
-        loading: () => <Skeleton variant="rectangular" height="400px" /> 
-    }
+    { ssr: false, loading: () => <Skeleton variant="rectangular" height="400px" /> }
 );
 
-export default function LectureRoom({ params }: { params: Promise<{ id: string, lectureId: string }> }) {
-    const resolvedParams = use(params);
-    const courseId = resolvedParams.id;
-    const lectureId = resolvedParams.lectureId;
+export default function LectureRoom() {
+    // 💡 1. الطريقة الصحيحة للتعامل مع الـ Params في الـ App Router Client Components
+    const params = useParams();
+    const courseId = params.id as string;
+    const lectureId = params.lectureId as string;
 
     const { lang } = useSettings();
+    const isAr = lang === 'ar';
+
     const [activeItem, setActiveItem] = useState<PlaylistItem | null>(null);
 
-    const { data: lecture, isLoading, isError } = useQuery({
+    // 💡 5. قوة React Query (StaleTime, Retry, Refetch)
+    const { data: lecture, isLoading, isError, refetch, isRefetching } = useQuery({
         queryKey: ['lecture', courseId, lectureId],
         queryFn: () => lectureService.getLecture(courseId, lectureId),
+        staleTime: 5 * 60 * 1000, // الداتا تفضل فريش 5 دقايق
+        retry: 2, // لو فشل يحاول مرتين كمان قبل ما يضرب الإيرور
     });
 
+    // 💡 2. حل مشكلة الـ useEffect الخطيرة (Functional State Update)
     useEffect(() => {
-        if (lecture && !activeItem) {
-            const firstActive = lecture.playlist.find((i: PlaylistItem) => i.status === 'active' || i.status === 'available' || i.status === 'completed');
-            setActiveItem(firstActive || lecture.playlist[0]);
+        if (lecture && lecture.playlist.length > 0) {
+            setActiveItem(prev => {
+                // لو مفيش عنصر مفعل، هات أول واحد متاح
+                if (!prev) {
+                    return lecture.playlist.find((i: PlaylistItem) => ['active', 'available', 'completed'].includes(i.status)) || lecture.playlist[0];
+                }
+                return prev;
+            });
+        }
+    }, [lecture]);
+
+    // 💡 ميزة "Auto Next": الانتقال التلقائي للعنصر التالي بعد انتهاء الفيديو
+    const handleAutoNext = useCallback(() => {
+        if (!lecture || !activeItem) return;
+        const currentIndex = lecture.playlist.findIndex(i => i.id === activeItem.id);
+        const nextItem = lecture.playlist[currentIndex + 1];
+        
+        if (nextItem && nextItem.status !== 'locked') {
+            setActiveItem(nextItem);
         }
     }, [lecture, activeItem]);
 
+
+    // 💡 شاشة التحميل (Suspense Fallback)
     if (isLoading || !activeItem) return (
-        <main className="page-wrapper" style={{ paddingTop: '40px' }}>
-            <div className="lecture-page-container">
-                <div className="lecture-sidebar-area">
-                    <Skeleton variant="rectangular" height="500px" />
-                </div>
-                <div className="lecture-main-area" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <main className="page-wrapper lecture-wrapper">
+            <div className="lec-skeleton-wrapper">
+                <div className="lec-skeleton-sidebar"><Skeleton variant="rectangular" height="500px" /></div>
+                <div className="lec-skeleton-main">
                     <Skeleton variant="rectangular" height="400px" />
-                    <div style={{ marginBottom: '10px' }}>
-                        <Skeleton variant="text" height="40px" width="60%" />
-                    </div>
+                    <Skeleton variant="text" height="40px" width="60%" />
                     <Skeleton variant="text" height="20px" width="100%" />
                     <Skeleton variant="text" height="20px" width="80%" />
                 </div>
@@ -75,38 +89,56 @@ export default function LectureRoom({ params }: { params: Promise<{ id: string, 
         </main>
     );
 
+    // 💡 3. شاشة الخطأ القوية (Enterprise Error State)
     if (isError || !lecture) return (
-        <main className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-            <h2 style={{ color: 'var(--danger)' }}>
-                {lang === 'ar' ? 'عفواً، حدث خطأ أثناء تحميل المحاضرة.' : 'Oops, failed to load lecture.'}
+        <main className="page-wrapper lec-error-state">
+            <FaExclamationTriangle className="lec-error-icon" />
+            <h2 className="lec-error-title">
+                {isAr ? 'عفواً، حدث خطأ في الاتصال بالخادم.' : 'Connection Error.'}
             </h2>
+            <p className="lec-error-desc">
+                {isAr ? 'لم نتمكن من جلب بيانات المحاضرة، قد يكون هناك مشكلة في الإنترنت أو يتم تحديث الخادم حالياً.' : 'Failed to load lecture data. Please check your connection or try again.'}
+            </p>
+            <Button 
+                variant="primary" 
+                icon={<FaSyncAlt />} 
+                onClick={() => refetch()} 
+                isLoading={isRefetching}
+            >
+                {isAr ? 'إعادة المحاولة' : 'Retry'}
+            </Button>
         </main>
     );
 
+    // 💡 4. الشاشة الرئيسية بدون ولا سطر Inline Style زحمة
     return (
-        <main className="page-wrapper" style={{ paddingTop: '40px' }}>
+        <main className="page-wrapper lecture-wrapper">
             <div className="lecture-page-container">
                 
-                {/* 1. القائمة الجانبية (يمين الشاشة) */}
+                {/* القائمة الجانبية */}
                 <div className="lecture-sidebar-area">
                     <LectureSidebar lecture={lecture} activeItem={activeItem} setActiveItem={setActiveItem} lang={lang} />
                 </div>
 
-                {/* 2. مساحة العرض الرئيسية (يسار الشاشة) */}
-                <div className="lecture-main-area">
+                {/* مساحة العرض الرئيسية */}
+                <div className="lecture-main-area lecture-main-col">
                     
                     {activeItem.type === 'video' && activeItem.status !== 'locked' ? (
-                        <VideoPlayer activeItem={activeItem} studentName={lecture.studentName} />
+                        <VideoPlayer 
+                            activeItem={activeItem} 
+                            studentName={lecture.studentName} 
+                            onVideoEnded={handleAutoNext} // 👈 تمرير دالة الانتقال التلقائي
+                        />
                     ) : (
                         <LectureContent activeItem={activeItem} lang={lang} />
                     )}
 
-                    <div className="lecture-details" style={{ marginTop: '25px', background: 'var(--card)', padding: '25px', borderRadius: '15px', border: '1px solid rgba(108,92,231,0.1)' }}>
-                        <h1 style={{ marginBottom: '15px', color: 'var(--p-purple)', fontSize: '1.6rem', fontWeight: 900 }}>
-                            {lang === 'ar' ? activeItem.titleAr : activeItem.titleEn}
+                    <div className="lec-details-card">
+                        <h1 className="lec-details-title">
+                            {isAr ? activeItem.titleAr : activeItem.titleEn}
                         </h1>
-                        <p style={{ opacity: 0.9, lineHeight: 1.8, fontWeight: 700, color: 'var(--txt)' }}>
-                            {lang === 'ar' ? lecture.descAr : lecture.descEn}
+                        <p className="lec-details-desc">
+                            {isAr ? lecture.descAr : lecture.descEn}
                         </p>
                     </div>
 
