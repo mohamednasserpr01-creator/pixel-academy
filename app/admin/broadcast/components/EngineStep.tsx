@@ -1,27 +1,85 @@
-// FILE: app/admin/broadcast/components/EngineStep.tsx
 "use client";
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaPaperPlane, FaPlay, FaPause, FaCheckCircle, FaExclamationTriangle, FaTimes, FaWhatsapp } from 'react-icons/fa';
 import { Button } from '../../../../components/ui/Button';
-import { MsgType, SendLog } from '../page';
 
-interface EngineStepProps {
-    isSending: boolean;
-    setIsSending: (val: boolean) => void;
-    progress: number;
-    targetCount: number;
-    msgType: MsgType;
-    delaySeconds: number;
-    sentLogs: SendLog[];
-    onReset: () => void;
-    onPrev: () => void;
-    onNext: () => void;
-}
+// 💡 استدعاء المخزن السحري!
+import { useBroadcastStore } from '../../../../features/broadcast/store/useBroadcastStore';
 
-export default function EngineStep({
-    isSending, setIsSending, progress, targetCount,
-    msgType, delaySeconds, sentLogs, onReset, onPrev, onNext
-}: EngineStepProps) {
+export default function EngineStep() {
+    // 💡 بنسحب كل حاجة من المخزن (مفيش Props!)
+    const { 
+        targetCount, msgType, delaySeconds, logs = [], 
+        updateField, setStep 
+    } = useBroadcastStore();
+
+    // 💡 حالة التشغيل والتقدم (Local States عشان دي واجهة تفاعلية)
+    const [isSending, setIsSending] = useState(false);
+    const [progress, setProgress] = useState(logs.length);
+
+    // 💡 الـ Refs دي عشان نضمن إن الـ setInterval ميقرأش State قديمة أبداً
+    const isSendingRef = useRef(isSending);
+    const progressRef = useRef(progress);
+    const sentLogsRef = useRef<any[]>(logs);
+
+    useEffect(() => { isSendingRef.current = isSending; }, [isSending]);
+    useEffect(() => { progressRef.current = progress; }, [progress]);
+    useEffect(() => { sentLogsRef.current = logs; }, [logs]);
+
+    // 🚀 محرك الإرسال المضاد للرصاص
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isSending) {
+            const speedMs = msgType === 'whatsapp' ? delaySeconds * 1000 : 200;
+
+            interval = setInterval(() => {
+                if (!isSendingRef.current) {
+                    clearInterval(interval);
+                    return;
+                }
+
+                if (progressRef.current >= targetCount) {
+                    clearInterval(interval);
+                    setIsSending(false);
+                    setTimeout(() => setStep(4), 1500);
+                    return;
+                }
+
+                const nextIndex = progressRef.current + 1;
+                const isSuccess = msgType === 'whatsapp' ? Math.random() > 0.15 : Math.random() > 0.02;
+                let failReason = '';
+                if (!isSuccess) failReason = msgType === 'whatsapp' ? 'الرقم غير مسجل بالواتساب' : 'حساب الطالب محظور';
+
+                const newLog = {
+                    id: `log-${Date.now()}-${nextIndex}`,
+                    studentName: `طالب مستهدف ${nextIndex}`,
+                    phone: `01${Math.floor(Math.random() * 900000000)}`,
+                    status: isSuccess ? 'success' : 'error',
+                    reason: !isSuccess ? failReason : undefined
+                };
+
+                progressRef.current = nextIndex;
+                const updatedLogs = [newLog, ...sentLogsRef.current];
+                
+                setProgress(progressRef.current);
+                updateField('logs', updatedLogs); // 💡 حفظ مباشر في المخزن
+
+                if (progressRef.current >= targetCount) {
+                    clearInterval(interval);
+                    setIsSending(false);
+                    setTimeout(() => setStep(4), 1500);
+                }
+            }, speedMs); 
+        }
+        return () => clearInterval(interval);
+    }, [isSending, targetCount, msgType, delaySeconds, setStep, updateField]);
+
+    const handleResetEngine = () => {
+        setIsSending(false);
+        setProgress(0);
+        updateField('logs', []);
+    };
+
     return (
         <div style={{ background: 'var(--card)', padding: '30px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', animation: 'fadeIn 0.3s ease' }}>
             <h2 style={{ marginBottom: '25px', color: 'white', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -37,7 +95,7 @@ export default function EngineStep({
                     </div>
                     {msgType === 'whatsapp' && (
                         <div style={{ fontSize: '0.85rem', color: '#2ecc71', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                            <FaWhatsapp /> سرعة الإرسال המبرمجة: رسالة كل {delaySeconds} ثانية.
+                            <FaWhatsapp /> سرعة الإرسال المبرمجة: رسالة كل {delaySeconds} ثانية.
                         </div>
                     )}
                 </div>
@@ -73,7 +131,7 @@ export default function EngineStep({
                     </button>
                 )}
                 {progress < targetCount && (
-                    <button onClick={onReset} style={{ background: 'transparent', color: '#e74c3c', border: '1px solid #e74c3c', padding: '15px 30px', borderRadius: '10px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <button onClick={handleResetEngine} style={{ background: 'transparent', color: '#e74c3c', border: '1px solid #e74c3c', padding: '15px 30px', borderRadius: '10px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <FaTimes /> إلغاء وتصفير
                     </button>
                 )}
@@ -86,11 +144,11 @@ export default function EngineStep({
                     <span style={{ fontSize: '0.8rem', color: '#3498db' }}>يتم تحديثه باستمرار...</span>
                 </div>
 
-                {sentLogs.length === 0 ? (
+                {logs.length === 0 ? (
                     <div style={{ color: 'var(--txt-mut)', textAlign: 'center', opacity: 0.5, marginTop: '60px' }}>في انتظار بدء الإرسال...</div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {sentLogs.map(log => (
+                        {logs.map((log: any) => (
                             <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '12px 15px', borderRadius: '8px', borderLeft: `3px solid ${log.status === 'success' ? '#2ecc71' : '#e74c3c'}` }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'white' }}>
                                     {log.status === 'success' ? <FaCheckCircle color="#2ecc71" /> : <FaExclamationTriangle color="#e74c3c" />}
@@ -106,9 +164,9 @@ export default function EngineStep({
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
-                <Button variant="outline" onClick={() => { setIsSending(false); onPrev(); }}>السابق: تعديل الرسالة</Button>
+                <Button variant="outline" onClick={() => { setIsSending(false); setStep(2); }}>السابق: تعديل الرسالة</Button>
                 {progress >= targetCount && (
-                    <Button variant="primary" onClick={onNext} style={{ background: 'var(--p-purple)', border: 'none' }}>الذهاب للتقرير النهائي 📊</Button>
+                    <Button variant="primary" onClick={() => setStep(4)} style={{ background: 'var(--p-purple)', border: 'none' }}>الذهاب للتقرير النهائي 📊</Button>
                 )}
             </div>
             <style jsx>{`@keyframes skeleton-loading { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }`}</style>
