@@ -5,11 +5,14 @@ import {
     FaHome, FaChalkboardTeacher, FaPlayCircle, FaShoppingCart, 
     FaGamepad, FaUserShield, FaTimes, FaGlobe, FaMoon, FaSun, 
     FaBars, FaUserCircle, FaSignOutAlt, FaThLarge, FaBookOpen, FaFolderOpen,
-    FaHandsHelping, FaTrophy // 💡 تم إضافة أيقونات الدعم النفسي وترتيب الطلاب
+    FaHandsHelping, FaTrophy 
 } from 'react-icons/fa';
 
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
+
+// 💡 استدعاء جرس الإشعارات 
+import { NotificationBell } from '../../features/notifications/components/NotificationBell';
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -58,7 +61,6 @@ export default function Navbar() {
                         <li><Link href="/knowledge-bank" onClick={() => setIsMenuOpen(false)}><FaBookOpen /> {lang === 'ar' ? 'بنك الأسئلة' : 'Questions'}</Link></li>
                         <li><Link href="/library" onClick={() => setIsMenuOpen(false)}><FaFolderOpen /> {lang === 'ar' ? 'المكتبة' : 'Library'}</Link></li>
                         
-                        {/* 👇 الإضافات الجديدة 👇 */}
                         <li><Link href="/leaderboard" onClick={() => setIsMenuOpen(false)}><FaTrophy style={{ color: '#f1c40f' }} /> {lang === 'ar' ? 'ترتيب الطلاب' : 'Leaderboard'}</Link></li>
                         <li><Link href="/support" onClick={() => setIsMenuOpen(false)}><FaHandsHelping style={{ color: '#0984e3' }} /> {lang === 'ar' ? 'الدعم النفسي' : 'Support'}</Link></li>
                         
@@ -85,7 +87,11 @@ export default function Navbar() {
                     </ul>
                 </nav>
                 
-                <div className="toolbar">
+                <div className="toolbar" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    
+                    {/* 💣 الجرس ظهر هنا لو الطالب مسجل دخول */}
+                    {isLoggedIn && <NotificationBell />}
+
                     <button className="icon-btn" onClick={toggleMode} title={lang === 'ar' ? 'تبديل الوضع' : 'Toggle Theme'}>
                         {theme === 'dark' ? <FaMoon /> : <FaSun />}
                     </button>
