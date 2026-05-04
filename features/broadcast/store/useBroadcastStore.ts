@@ -1,3 +1,4 @@
+// FILE: features/broadcast/store/useBroadcastStore.ts
 import { create } from 'zustand';
 import { CampaignState, AudienceType, MsgType, SmartCondition } from '../types';
 
@@ -13,6 +14,8 @@ const initialState: CampaignState = {
     targetMajor: 'all',
     targetAudience: 'students',
     condition: 'all',
+    selectedTeacherId: 'all', // 👈 جديد
+    selectedEntityId: 'all',  // 👈 جديد
     targetCount: 0,
     msgType: 'whatsapp',
     messageBody: '',
@@ -20,18 +23,12 @@ const initialState: CampaignState = {
     delaySeconds: 5,
     isScheduled: false,
     scheduleDate: '',
-    logs: [], // 🚀 تم إضافة مصفوفة السجل هنا
+    logs: [],
 };
 
 export const useBroadcastStore = create<BroadcastStore>((set) => ({
     ...initialState,
-    
-    // لتغيير الخطوة الحالية في المعالج (Wizard)
     setStep: (step) => set({ step }),
-    
-    // دالة سحرية لتحديث أي حقل في الحملة بكلمة واحدة
     updateField: (field, value) => set((state) => ({ ...state, [field]: value })),
-    
-    // تصفير الحملة للبدء من جديد
     resetCampaign: () => set(initialState),
 }));

@@ -1,35 +1,32 @@
 // FILE: lib/api/endpoints/broadcast.ts
 import { fetchAPI } from '../client'; 
 
-export interface CampaignPayload {
-  title?: string;
-  message: string;
-  target: { stage?: string; major?: string; condition?: string; };
-  type: "whatsapp" | "in_app";
-}
-
 export const broadcastApi = {
-    sendCampaign: async (data: CampaignPayload) => {
+    sendCampaign: async (data: any) => {
         return new Promise((resolve) => {
             setTimeout(() => {
-                // 🚀 السحر هنا: محاكاة الباك إند لما يبعت إشعار حقيقي للطلاب!
-                if (data.type === 'in_app') {
+                // 💡 السحر هنا: خلينا السيرفر يفهم الـ in_app مهما كان اسم المتغير اللي جاي من الفرونت!
+                const isAppNotification = data.type === 'in_app' || data.msgType === 'in_app' || data.channel === 'in_app';
+                const messageContent = data.message || data.messageBody || 'إشعار جديد من الإدارة';
+                
+                // لو الإشعار داخلي، هنرميه في قاعدة بيانات الطالب (localStorage)
+                if (isAppNotification) {
                     const saved = localStorage.getItem('pixel_notifications');
                     const notifications = saved ? JSON.parse(saved) : [];
                     
                     const newNotification = {
                         id: Date.now().toString(),
-                        title: data.title || 'إشعار إداري جديد 📢',
-                        body: data.message,
+                        title: 'إشعار هام 📢',
+                        body: messageContent,
                         createdAt: 'الآن',
                         isRead: false,
                         type: 'info'
                     };
                     
-                    // حفظ الإشعار في قاعدة بيانات الطالب
+                    // إضافة الإشعار الجديد في أول القائمة
                     localStorage.setItem('pixel_notifications', JSON.stringify([newNotification, ...notifications]));
                     
-                    // إطلاق إشارة (Event) عشان جرس الطالب يحس بيها فوراً (محاكاة للـ WebSockets)
+                    // إطلاق الحدث عشان الجرس يرن فوراً في كل الشاشات المفتوحة
                     if (typeof window !== 'undefined') {
                         window.dispatchEvent(new Event('pixel_new_notification'));
                     }

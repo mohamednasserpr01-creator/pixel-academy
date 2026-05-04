@@ -7,13 +7,13 @@ import { Button } from '../../../../components/ui/Button';
 import { useBroadcastStore } from '../../../../features/broadcast/store/useBroadcastStore';
 
 export default function MessageStep() {
-    // 💡 بنسحب كل حاجة محتاجينها من المخزن (مفيش Props بعد النهاردة!)
+    // 💡 بنسحب كل حاجة محتاجينها من المخزن
     const { 
         msgType, messageBody, senderPhone, delaySeconds, targetAudience, condition, 
         updateField, setStep 
     } = useBroadcastStore();
 
-    // 💡 الحالات دي خاصة بالواجهة فقط (UI States) ومش محتاجين نرفعها للمخزن
+    // 💡 الحالات دي خاصة بالواجهة فقط (UI States)
     const [isWaChecking, setIsWaChecking] = useState(false);
     const [isWaConnected, setIsWaConnected] = useState(false);
     const [sendTiming, setSendTiming] = useState<'now' | 'schedule'>('now');
@@ -34,23 +34,29 @@ export default function MessageStep() {
         }, 1500);
     };
 
-    // 💡 المولد الذكي اللي بيغير الرسالة حسب الاستهداف اللي التيم طلبه!
+    // 🚀 المولد الذكي اللي بيغير الرسالة حسب الاستهداف الخاص بـ "الأدمن"!
     const applyDynamicTemplate = () => {
         const prefix = targetAudience === 'parents' ? 'عزيزي ولي الأمر،' : 'عزيزي الطالب،';
         let template = '';
         
         switch(condition) {
-            case 'missed_exam':
-                template = `${prefix}\nنحيطكم علماً بأنه لم يتم تسليم (الامتحان/الواجب) المطلوب.\nيرجى المتابعة والالتزام حرصاً على المستوى الدراسي.\n\n_إدارة المنصة_`;
+            case 'new_course':
+                template = `${prefix}\nتم إطلاق كورس جديد وحصري على المنصة!\nسارع بالاشتراك الآن لتحقيق أقصى استفادة.\n\n_إدارة بيكسل أكاديمي_`;
                 break;
-            case 'score_below_50':
-                template = `${prefix}\nنتيجة التقييم الأخير غير مرضية (أقل من النصف).\nنرجو مراجعة الأخطاء وبذل مجهود أكبر في المرات القادمة.\n\n_إدارة المنصة_`;
+            case 'new_offer':
+                template = `${prefix}\nعرض جديد متاح الآن لفترة محدودة! 🎁\nوفر فلوسك واشترك في أقوى باقات المنصة.\n\n_إدارة بيكسل أكاديمي_`;
                 break;
-            case 'absent_3_days':
-                template = `${prefix}\nافتقدناك في المنصة! لم يتم تسجيل الدخول منذ فترة.\nتذكر أن الاستمرارية هي مفتاح التفوق. ننتظر العودة لاستكمال التعلم.\n\n_إدارة المنصة_`;
+            case 'new_product':
+                template = `${prefix}\nمنتج جديد متوفر الآن في متجر بيكسل 🛒\nاطلب الآن وسيصلك لباب البيت.\n\n_إدارة بيكسل أكاديمي_`;
+                break;
+            case 'new_bank':
+                template = `${prefix}\nبنك أسئلة جديد متاح الآن للتدريب 🧠\nادخل واختبر مستواك.\n\n_إدارة بيكسل أكاديمي_`;
+                break;
+            case 'new_library':
+                template = `${prefix}\nتم إضافة ملخص جديد في المكتبة 📚\nيمكنك تحميله الآن بصيغة PDF مجاناً.\n\n_إدارة بيكسل أكاديمي_`;
                 break;
             default:
-                template = `${prefix}\nنود إعلامك بأنه تم تحديث محتوى الكورس.\n\n_إدارة المنصة_`;
+                template = `${prefix}\nإشعار هام من إدارة المنصة.\n\n_إدارة بيكسل أكاديمي_`;
         }
         updateField('messageBody', template);
     };
@@ -102,9 +108,8 @@ export default function MessageStep() {
                 )}
             </div>
 
-            {/* 💡 محرر الرسائل والمعاينة */}
+            {/* المحرر والمعاينة */}
             <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                {/* المحرر */}
                 <div style={{ flex: 1, minWidth: '300px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <label style={{ color: 'var(--txt-mut)', fontWeight: 'bold' }}>محتوى الرسالة</label>
@@ -119,7 +124,7 @@ export default function MessageStep() {
                         style={{ width: '100%', height: '220px', padding: '20px', background: 'rgba(0,0,0,0.3)', border: `2px solid ${msgType === 'whatsapp' ? 'rgba(46, 204, 113, 0.3)' : 'rgba(52, 152, 219, 0.3)'}`, color: 'white', borderRadius: '12px', outline: 'none', resize: 'vertical', fontSize: '1.1rem', lineHeight: '1.8', fontFamily: 'inherit' }} 
                     />
 
-                    {/* 💡 الجدولة */}
+                    {/* الجدولة */}
                     <div style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '20px' }}>
                         <label style={{ display: 'block', color: 'var(--txt-mut)', marginBottom: '10px', fontWeight: 'bold' }}><FaClock/> موعد الإرسال</label>
                         <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>

@@ -1,28 +1,27 @@
+// FILE: features/broadcast/types/index.ts
 export type AudienceType = 'students' | 'parents' | 'both';
 export type MsgType = 'whatsapp' | 'in_app';
-export type SmartCondition = 'all' | 'missed_exam' | 'score_below_50' | 'absent_3_days';
+
+// 💡 الشروط الجديدة الخاصة بالأدمن
+export type SmartCondition = 'all' | 'new_course' | 'new_offer' | 'new_product' | 'new_bank' | 'new_library';
 
 export interface CampaignState {
-    // 1. Wizard Step
     step: 1 | 2 | 3 | 4;
-    
-    // 2. Smart Targeting (الاستهداف الذكي)
     targetStage: string;
     targetMajor: string;
     targetAudience: AudienceType;
     condition: SmartCondition;
-    targetCount: number;
+    
+    // 💡 معرفات جديدة عشان نحفظ اختيار الأدمن (المدرس، الكورس، العرض، إلخ)
+    selectedTeacherId: string;
+    selectedEntityId: string; 
 
-    // 3. Message Details
+    targetCount: number;
     msgType: MsgType;
     messageBody: string;
     senderPhone: string;
     delaySeconds: number;
-    
-    // 4. Scheduling (الجدولة)
     isScheduled: boolean;
     scheduleDate: string;
-
-    // 5. Engine Logs (سجل الإرسال اللي هيربط المحرك بالتقرير) 🚀
     logs: any[];
 }
